@@ -1,0 +1,223 @@
+name: Continuous Integration
+concurrency: ci-${{ github.ref }}
+on:
+  push:
+    tags-ignore:
+      - "*"
+    branches:
+      - "main"
+  pull_request:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+env:
+  REPOSITORY: ${{ github.repository }}
+
+jobs:
+  test-binary:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+      - uses: actions/cache@v2
+        id: go-cache
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: get git tags
+        run: git fetch --prune --unshallow --tags
+      - name: install-mockery
+        run: go install github.com/vektra/mockery/v2
+      - name: test
+        run: make test
+      - name: static analysis
+        run: make vet-check
+      - name: coding styles
+        run: make fmt-check
+
+  test-checks:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.7
+      - uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-python-${{ hashFiles('requirements.dev.txt') }}
+      - name: install python dependencies
+        run: pip install -r requirements.dev.txt
+      - name: ansible playbooks and roles lint check
+        run: |
+          ansible-lint -vv -x role-name,risky-shell-pipe,no-tabs -w yaml \
+            runner/ansible/* runner/ansible/roles/* \
+            runner/ansible/roles/checks/* runner/ansible/vars/*
+      - name: trento checks ID sanity test
+        run: python3 hack/id_checker.py
+
+  build-and-push-container-images:
+    runs-on: ubuntu-20.04
+    if: github.event_name == 'release' || (github.event_name == 'push' && github.ref_name == 'main') || github.event_name == 'workflow_dispatch'
+    needs: [test-binary, test-checks]
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_REPOSITORY: ghcr.io/${{ github.repository_owner }}/trento-runner
+      #IMAGE_TAG: "${{ (github.event_name == 'release' && github.event.release.tag_name) || (github.event_name == 'push' && github.ref_name == 'main' && 'rolling') || github.sha }}"
+      IMAGE_TAG: "dev"
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v1
+      - name: Log in to the Container registry
+        uses: docker/login-action@dd4fa0671be5250ee6f50aedf4cb05514abda2c7
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@e5622373a38e60fb6d795a4421e56882f2d7a681
+        with:
+          images: ${{ env.IMAGE_REPOSITORY }}
+      - name: Build and push container image
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: true
+          target: trento-runner
+          tags: ${{ env.IMAGE_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  build-and-export-container-images:
+    runs-on: ubuntu-20.04
+    needs: [test-binary, test-checks]
+    permissions:
+      contents: read
+      packages: write
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_REPOSITORY: ghcr.io/${{ github.repository_owner }}/trento-runner
+      #IMAGE_TAG: "${{ (github.event_name == 'release' && github.event.release.tag_name) || (github.event_name == 'push' && github.ref_name == 'main' && 'rolling') || github.sha }}"
+      IMAGE_TAG: "dev"
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@v1
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@e5622373a38e60fb6d795a4421e56882f2d7a681
+        with:
+          images: ${{ env.IMAGE_REPOSITORY }}
+      - name: Create image artifact
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          push: false
+          target: trento-runner
+          tags: ${{ env.IMAGE_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          labels: ${{ steps.meta.outputs.labels }}
+          outputs: type=docker,dest=/tmp/trento-runner.tar
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: trento-runner
+          path: /tmp/trento-runner.tar
+
+  smoke-test-container-images:
+    runs-on: ubuntu-20.04
+    needs: build-and-export-container-images
+    env:
+      REGISTRY: ghcr.io
+      IMAGE_REPOSITORY: ghcr.io/${{ github.repository_owner }}/${{ matrix.image }}
+      #IMAGE_TAG: "${{ (github.event_name == 'release' && github.event.release.tag_name) || (github.event_name == 'push' && github.ref_name == 'main' && 'rolling') || github.sha }}"
+      IMAGE_TAG: "dev"
+    steps:
+      - uses: docker/setup-buildx-action@v1
+      - name: Download artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: trento-runner
+          path: /tmp
+      - name: Load image
+        run: docker load --input /tmp/trento-runner.tar
+      - name: Test CLI
+        run: docker run --rm ${{ env.IMAGE_REPOSITORY }}:${{ env.IMAGE_TAG }} version
+
+  build-static-binary:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v2
+        with:
+          go-version: 1.16
+      - uses: actions/cache@v2
+        id: go-cache
+        with:
+          path: ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+      - name: build
+        run: make -j4 cross-compiled
+      - name: compress
+        run: |
+          set -x
+          find ./build -maxdepth 1 -mindepth 1 -type d -exec sh -c 'tar -zcf build/trento-runner-$(basename {}).tgz -C {} trento-runner' \;
+      - uses: actions/upload-artifact@v2
+        with:
+          name: trento-runner-binaries
+          path: |
+            build/trento-runner-amd64.tgz
+            build/trento-runner-arm64.tgz
+            build/trento-runner-ppc64le.tgz
+            build/trento-runner-s390x.tgz
+
+  release-rolling:
+    needs: [test-binary, test-checks]
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: trento-runner-binaries
+      - uses: "marvinpinto/action-automatic-releases@v1.2.1"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "rolling"
+          prerelease: true
+          title: "Cutting Edge"
+          files: |
+            trento-runner-amd64.tgz
+            trento-runner-arm64.tgz
+            trento-runner-ppc64le.tgz
+            trento-runner-s390x.tgz
+
+  # This job doesn't actually make release, but rather reacts to a manual one, made via the GitHub UI.
+  # In the future, we might want to reuse the same mechanism of the rolling ones to automate everything here as well.
+  release-tag:
+    needs: [test-binary, test-checks]
+    if: github.event.release
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: trento-binaries
+      - uses: AButler/upload-release-assets@v2.0
+        with:
+          files: "trento-runner-*"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}

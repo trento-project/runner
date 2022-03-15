@@ -1,0 +1,26 @@
+- hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Include load_facts
+      import_role:
+        name: load_facts
+
+    - name: Find checks
+      find:
+        paths: "{{ playbook_dir }}/roles/checks"
+        file_type: directory
+      register: checks
+
+    - name: Store metadata
+      include_role:
+        name: post-metadata
+        tasks_from: store
+      vars:
+        metadata_path: "{{ item.path }}/defaults/main.yml"
+      loop: "{{ checks.files|sort(attribute='path') }}"
+
+    - name: Post metadata
+      import_role:
+        name: post-metadata
+        tasks_from: post

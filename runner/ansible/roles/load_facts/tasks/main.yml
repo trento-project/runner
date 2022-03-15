@@ -1,0 +1,24 @@
+---
+
+- name: gather facts
+  ansible.builtin.setup:
+  register: facts_result
+
+- name: load environment variables
+  include_vars:
+    dir: "{{ playbook_dir }}/vars/{{ env | default('azure') }}"
+  delegate_to: localhost
+  run_once: true
+
+- name: Gather the package facts
+  ansible.builtin.package_facts:
+    manager: auto
+
+- name: set default value to cluster_selected_checks_list
+  set_fact:
+    cluster_selected_checks_list: "{{ cluster_selected_checks|default([]) }}"
+
+- name: debug loaded vars
+  debug:
+    var: expected
+    verbosity: 1
