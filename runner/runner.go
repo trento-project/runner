@@ -27,6 +27,8 @@ const (
 	AnsibleHostFile   = "ansible/inventories/%s/ansible_hosts"
 )
 
+//go:generate mockery --name=RunnerService
+
 type RunnerService interface {
 	Start(ctx context.Context) error
 	IsCatalogReady() bool
