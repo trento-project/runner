@@ -1,0 +1,4 @@
+- name: Dump catalog data fo a file
+  copy:
+    dest: '{{ lookup("env", "CATALOG_DESTINATION") }}'
+    content: "{{ metadata | to_json }}"

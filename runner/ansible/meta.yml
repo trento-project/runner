@@ -2,9 +2,11 @@
   gather_facts: false
 
   tasks:
-    - name: Include load_facts
-      import_role:
-        name: load_facts
+    - name: Find providers
+      find:
+        paths: "{{ playbook_dir }}/vars"
+        file_type: directory
+      register: providers
 
     - name: Find checks
       find:
@@ -12,15 +14,15 @@
         file_type: directory
       register: checks
 
-    - name: Store metadata
+    - name: Build catalog data
       include_role:
         name: post-metadata
-        tasks_from: store
+        tasks_from: build_catalog
       vars:
-        metadata_path: "{{ item.path }}/defaults/main.yml"
-      loop: "{{ checks.files|sort(attribute='path') }}"
+        provider: "{{ item.path | basename }}"
+      loop: "{{ providers.files|sort(attribute='path') }}"
 
-    - name: Post metadata
+    - name: Dump metadata
       import_role:
         name: post-metadata
-        tasks_from: post
+        tasks_from: dump

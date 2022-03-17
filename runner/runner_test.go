@@ -39,8 +39,7 @@ func TestNewAnsibleMetaRunner(t *testing.T) {
 		Playbook: path.Join(TestAnsibleFolder, "ansible/meta.yml"),
 		Envs: map[string]string{
 			"ANSIBLE_CONFIG":      path.Join(TestAnsibleFolder, "ansible/ansible.cfg"),
-			"TRENTO_WEB_API_HOST": "127.0.0.1",
-			"TRENTO_WEB_API_PORT": "8000",
+			"CATALOG_DESTINATION": path.Join(TestAnsibleFolder, "ansible/catalog.json"),
 		},
 		Check: false,
 	}

@@ -21,10 +21,11 @@ import (
 var ansibleFS embed.FS
 
 const (
-	AnsibleMain       = "ansible/check.yml"
-	AnsibleMeta       = "ansible/meta.yml"
-	AnsibleConfigFile = "ansible/ansible.cfg"
-	AnsibleHostFile   = "ansible/ansible_hosts"
+	AnsibleMain            = "ansible/check.yml"
+	AnsibleMeta            = "ansible/meta.yml"
+	AnsibleConfigFile      = "ansible/ansible.cfg"
+	AnsibleHostFile        = "ansible/ansible_hosts"
+	CatalogDestinationFile = "ansible/catalog.json"
 )
 
 //go:generate mockery --name=RunnerService
@@ -177,7 +178,8 @@ func NewAnsibleMetaRunner(config *Config) (*AnsibleRunner, error) {
 
 	configFile := path.Join(config.AnsibleFolder, AnsibleConfigFile)
 	ansibleRunner.SetConfigFile(configFile)
-	ansibleRunner.SetTrentoApiData(config.ApiHost, config.ApiPort)
+	destination := path.Join(config.AnsibleFolder, CatalogDestinationFile)
+	ansibleRunner.SetCatalogDestination(destination)
 
 	return ansibleRunner, nil
 }

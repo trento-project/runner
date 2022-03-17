@@ -15,15 +15,17 @@
   set_fact:
     metadata: |
       {{ (metadata|default({})) | combine(
-        {'checks': [{
-            'id': id|string,
-            'name': name,
-            'group': group,
-            'description': description,
-            'remediation': remediation,
-            'labels': labels,
-            'implementation': implementation,
-            'premium': metadata_vars.premium|default(False)
-          }]
-        }, recursive=True, list_merge='append')
+        { provider | default('azure'):
+          { 'checks': [{
+              'id': id|string,
+              'name': name,
+              'group': group,
+              'description': description,
+              'remediation': remediation,
+              'labels': labels,
+              'implementation': implementation,
+              'premium': metadata_vars.premium|default(False)
+            }]
+          },
+        },recursive=True, list_merge='append')
       }}

@@ -1,0 +1,13 @@
+- name: Include load_facts
+  import_role:
+    name: load_facts
+
+- name: Store metadata
+  include_role:
+    name: post-metadata
+    tasks_from: store
+  vars:
+    metadata_path: "{{ check_file.path }}/defaults/main.yml"
+  loop: "{{ checks.files|sort(attribute='path') }}"
+  loop_control:
+    loop_var: check_file
