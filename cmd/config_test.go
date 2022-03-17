@@ -46,6 +46,8 @@ func (suite *RunnerCmdTestSuite) TearDownTest() {
 	suite.cmd.Execute()
 
 	expectedConfig := &runner.Config{
+		Host:          "localhost",
+		Port:          5678,
 		ApiHost:       "some-api-host",
 		ApiPort:       1337,
 		Interval:      1 * time.Minute,
@@ -59,6 +61,8 @@ func (suite *RunnerCmdTestSuite) TearDownTest() {
 func (suite *RunnerCmdTestSuite) TestConfigFromFlags() {
 	suite.cmd.SetArgs([]string{
 		"start",
+		"--host=localhost",
+		"--port=5678",
 		"--api-host=some-api-host",
 		"--api-port=1337",
 		"--interval=1",
@@ -67,6 +71,8 @@ func (suite *RunnerCmdTestSuite) TestConfigFromFlags() {
 }
 
 func (suite *RunnerCmdTestSuite) TestConfigFromEnv() {
+	os.Setenv("TRENTO_RUNNER_HOST", "localhost")
+	os.Setenv("TRENTO_RUNNER_PORT", "5678")
 	os.Setenv("TRENTO_RUNNER_API_HOST", "some-api-host")
 	os.Setenv("TRENTO_RUNNER_API_PORT", "1337")
 	os.Setenv("TRENTO_RUNNER_INTERVAL", "1")

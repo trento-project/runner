@@ -9,6 +9,8 @@ import (
 
 func LoadConfig() *runner.Config {
 	return &runner.Config{
+		Host:          viper.GetString("host"),
+		Port:          viper.GetInt("port"),
 		ApiHost:       viper.GetString("api-host"),
 		ApiPort:       viper.GetInt("api-port"),
 		Interval:      time.Duration(viper.GetInt("interval")) * time.Minute,

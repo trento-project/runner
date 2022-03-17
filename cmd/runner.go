@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"os"
 	"os/signal"
 	"syscall"
@@ -23,16 +24,20 @@ func NewRunnerCmd() *cobra.Command {
 		Use:   "trento-runner",
 		Short: "Trento Runner component, which is responsible of running the Trento checks",
 		PersistentPreRunE: func(runnerCmd *cobra.Command, _ []string) error {
+			runnerCmd.Flags().VisitAll(func(f *pflag.Flag) {
+				viper.BindPFlag(f.Name, f)
+			})
+
+			runnerCmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
+				viper.BindPFlag(f.Name, f)
+			})
+
 			return internal.InitConfig("runner")
 		},
 	}
 
 	runnerCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.trento/runner.yaml)")
 	runnerCmd.PersistentFlags().StringVar(&logLevel, "log-level", "info", "then minimum severity (error, warn, info, debug) of logs to output")
-
-	runnerCmd.PersistentFlags().VisitAll(func(f *pflag.Flag) {
-		viper.BindPFlag(f.Name, f)
-	})
 
 	addStartCmd(runnerCmd)
 	addVersionCmd(runnerCmd)
@@ -47,6 +52,8 @@ func Execute() {
 }
 
 func addStartCmd(runnerCmd *cobra.Command) {
+	var host string
+	var port int
 	var apiHost string
 	var apiPort int
 	var interval int
@@ -58,6 +65,8 @@ func addStartCmd(runnerCmd *cobra.Command) {
 		Run:   start,
 	}
 
+	startCmd.Flags().StringVar(&host, "host", "0.0.0.0", "Trento Runner API host")
+	startCmd.Flags().IntVar(&port, "port", 8080, "Trento Runner API port")
 	startCmd.Flags().StringVar(&apiHost, "api-host", "0.0.0.0", "Trento web server API host")
 	startCmd.Flags().IntVar(&apiPort, "api-port", 8080, "Trento web server API port")
 	startCmd.Flags().IntVarP(&interval, "interval", "i", 5, "Interval in minutes to run the checks")
@@ -69,14 +78,17 @@ func addStartCmd(runnerCmd *cobra.Command) {
 func start(*cobra.Command, []string) {
 	var err error
 
+	ctx := context.Background()
+	ctx, cancel := context.WithCancel(ctx)
+
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
 
 	config := LoadConfig()
 
-	runner, err := runner.NewRunner(config)
+	app, err := runner.NewApp(config)
 	if err != nil {
-		log.Fatal("Failed to create the runner instance: ", err)
+		log.Fatal("Failed to create the runner application: ", err)
 	}
 
 	go func() {
@@ -84,11 +96,10 @@ func start(*cobra.Command, []string) {
 		log.Printf("Caught %s signal!", quit)
 
 		log.Println("Stopping the runner...")
-		runner.Stop()
+		cancel()
 	}()
 
-	err = runner.Start()
-	if err != nil {
-		log.Fatal("Failed to start the runner service: ", err)
+	if err = app.Start(ctx); err != nil {
+		log.Fatal("Failed to start the runner application: ", err)
 	}
 }
