@@ -3,8 +3,10 @@ package runner
 import (
 	"context"
 	"embed"
+	"encoding/json"
 	"fmt"
 	"io/fs"
+	"io/ioutil"
 	"os"
 	"path"
 	"sync"
@@ -21,24 +23,25 @@ import (
 var ansibleFS embed.FS
 
 const (
-	AnsibleMain            = "ansible/check.yml"
-	AnsibleMeta            = "ansible/meta.yml"
-	AnsibleConfigFile      = "ansible/ansible.cfg"
-	AnsibleHostFile        = "ansible/ansible_hosts"
-	CatalogDestinationFile = "ansible/catalog.json"
+	AnsibleMain       = "ansible/check.yml"
+	AnsibleMeta       = "ansible/meta.yml"
+	AnsibleConfigFile = "ansible/ansible.cfg"
+	AnsibleHostFile   = "ansible/ansible_hosts"
 )
 
-//go:generate mockery --name=RunnerService
+//go:generate mockery --name=RunnerService --inpackage --filename=runner_mock.go
 
 type RunnerService interface {
 	Start(ctx context.Context) error
 	IsCatalogReady() bool
 	BuildCatalog() error
+	GetCatalog() map[string]*Catalog
 }
 
 type runnerService struct {
 	config    *Config
 	trentoApi api.TrentoApiService
+	catalog   map[string]*Catalog
 	ready     bool
 }
 
@@ -109,14 +112,32 @@ func (c *runnerService) BuildCatalog() error {
 		return err
 	}
 
+	// The checks catalog metadata playbook creates the checks catalog in the provider file path
 	if err = metaRunner.RunPlaybook(); err != nil {
 		log.Errorf("Error running the catalog meta-playbook")
 		return err
 	}
 
+	// After the playbook is done, recover back the file content
+	catalogRaw, err := ioutil.ReadFile(metaRunner.Envs[CatalogDestination])
+	if err != nil {
+		log.Fatal("Error when opening the catalog file: ", err)
+	}
+
+	var catalog map[string]*Catalog
+	err = json.Unmarshal(catalogRaw, &catalog)
+	if err != nil {
+		log.Fatal("Error during Unmarshal(): ", err)
+	}
+
+	c.catalog = catalog
 	c.ready = true
 
 	return nil
+}
+
+func (c *runnerService) GetCatalog() map[string]*Catalog {
+	return c.catalog
 }
 
 func createAnsibleFiles(folder string) error {

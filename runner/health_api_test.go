@@ -6,8 +6,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/suite"
-
-	"github.com/trento-project/runner/runner/mocks"
 )
 
 type ApiTestCase struct {
@@ -39,7 +37,7 @@ func (suite *ApiTestCase) Test_ApiHealthTest() {
 }
 
 func (suite *ApiTestCase) Test_ApiReadyTest() {
-	mockRunnerService := new(mocks.RunnerService)
+	mockRunnerService := new(MockRunnerService)
 	mockRunnerService.On("IsCatalogReady").Return(true)
 
 	deps := Dependencies{

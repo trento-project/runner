@@ -62,6 +62,7 @@ func NewAppWithDeps(config *Config, deps Dependencies) (*App, error) {
 	{
 		apiGroup.GET("/health", HealthHandler)
 		apiGroup.GET("/ready", ReadyHandler(deps.runnerService))
+		apiGroup.GET("/catalog", CatalogHandler(deps.runnerService))
 	}
 
 	app.webEngine = engine

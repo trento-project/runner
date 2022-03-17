@@ -6,26 +6,34 @@ import (
 	"path"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 )
 
 const (
 	TestAnsibleFolder string = "../test/ansible_test"
 )
 
+type RunnerTestCase struct {
+	suite.Suite
+}
+
+func TestRunnerTestCase(t *testing.T) {
+	suite.Run(t, new(RunnerTestCase))
+}
+
 // TODO: This test could be improved to check the definitve ansible files structure
 // once we have something fixed
-func TestCreateAnsibleFiles(t *testing.T) {
+func (suite *ApiTestCase) Test_CreateAnsibleFiles() {
 	tmpDir, _ := ioutil.TempDir(os.TempDir(), "trentotest")
 	err := createAnsibleFiles(tmpDir)
 
-	assert.DirExists(t, path.Join(tmpDir, "ansible"))
-	assert.NoError(t, err)
+	suite.DirExists(path.Join(tmpDir, "ansible"))
+	suite.NoError(err)
 
 	os.RemoveAll(tmpDir)
 }
 
-func TestNewAnsibleMetaRunner(t *testing.T) {
+func (suite *ApiTestCase) Test_NewAnsibleMetaRunner() {
 
 	cfg := &Config{
 		ApiHost:       "127.0.0.1",
@@ -44,11 +52,11 @@ func TestNewAnsibleMetaRunner(t *testing.T) {
 		Check: false,
 	}
 
-	assert.NoError(t, err)
-	assert.Equal(t, expectedMetaRunner, a)
+	suite.NoError(err)
+	suite.Equal(expectedMetaRunner, a)
 }
 
-func TestNewAnsibleCheckRunner(t *testing.T) {
+func (suite *ApiTestCase) Test_NewAnsibleCheckRunner() {
 
 	cfg := &Config{
 		ApiHost:       "127.0.0.1",
@@ -68,6 +76,6 @@ func TestNewAnsibleCheckRunner(t *testing.T) {
 		Check: true,
 	}
 
-	assert.NoError(t, err)
-	assert.Equal(t, expectedMetaRunner, a)
+	suite.NoError(err)
+	suite.Equal(expectedMetaRunner, a)
 }
