@@ -34,13 +34,6 @@ type Runner struct {
 	trentoApi api.TrentoApiService
 }
 
-type Config struct {
-	ApiHost       string
-	ApiPort       int
-	Interval      time.Duration
-	AnsibleFolder string
-}
-
 func NewRunner(config *Config) (*Runner, error) {
 	ctx, ctxCancel := context.WithCancel(context.Background())
 
