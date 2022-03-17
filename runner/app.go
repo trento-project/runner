@@ -24,7 +24,7 @@ type Config struct {
 type App struct {
 	config    *Config
 	webEngine *gin.Engine
-	Dependencies
+	deps      Dependencies
 }
 
 type Dependencies struct {
@@ -38,7 +38,7 @@ func DefaultDependencies(config *Config) Dependencies {
 	}
 
 	return Dependencies{
-		runnerService,
+		runnerService: runnerService,
 	}
 }
 
@@ -49,6 +49,7 @@ func NewApp(config *Config) (*App, error) {
 func NewAppWithDeps(config *Config, deps Dependencies) (*App, error) {
 	app := &App{
 		config: config,
+		deps:   deps,
 	}
 
 	engine := gin.New()
@@ -89,14 +90,25 @@ func (a *App) Start(ctx context.Context) error {
 		return nil
 	})
 
-	log.Infof("Starting runner....")
+	log.Infof("Building catalog....")
 	g.Go(func() error {
-		err := a.runnerService.Start(ctx)
+		err := a.deps.runnerService.BuildCatalog()
 		if err != nil {
 			return err
 		}
 		return nil
 	})
+
+	/*
+		log.Infof("Starting runner....")
+		g.Go(func() error {
+			err := a.deps.runnerService.Start(ctx)
+			if err != nil {
+				return err
+			}
+			return nil
+		})
+	*/
 
 	go func() {
 		<-ctx.Done()

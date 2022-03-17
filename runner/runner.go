@@ -24,7 +24,7 @@ const (
 	AnsibleMain       = "ansible/check.yml"
 	AnsibleMeta       = "ansible/meta.yml"
 	AnsibleConfigFile = "ansible/ansible.cfg"
-	AnsibleHostFile   = "ansible/inventories/%s/ansible_hosts"
+	AnsibleHostFile   = "ansible/ansible_hosts"
 )
 
 //go:generate mockery --name=RunnerService
@@ -32,6 +32,7 @@ const (
 type RunnerService interface {
 	Start(ctx context.Context) error
 	IsCatalogReady() bool
+	BuildCatalog() error
 }
 
 type runnerService struct {
@@ -95,6 +96,26 @@ func (c *runnerService) Start(ctx context.Context) error {
 
 func (c *runnerService) IsCatalogReady() bool {
 	return c.ready
+}
+
+func (c *runnerService) BuildCatalog() error {
+	if err := createAnsibleFiles(c.config.AnsibleFolder); err != nil {
+		return err
+	}
+
+	metaRunner, err := NewAnsibleMetaRunner(c.config)
+	if err != nil {
+		return err
+	}
+
+	if err = metaRunner.RunPlaybook(); err != nil {
+		log.Errorf("Error running the catalog meta-playbook")
+		return err
+	}
+
+	c.ready = true
+
+	return nil
 }
 
 func createAnsibleFiles(folder string) error {
