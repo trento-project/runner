@@ -29,24 +29,18 @@ const (
 
 type Runner struct {
 	config    *Config
-	ctx       context.Context
-	ctxCancel context.CancelFunc
 	trentoApi api.TrentoApiService
 }
 
 func NewRunner(config *Config) (*Runner, error) {
-	ctx, ctxCancel := context.WithCancel(context.Background())
-
 	runner := &Runner{
-		config:    config,
-		ctx:       ctx,
-		ctxCancel: ctxCancel,
+		config: config,
 	}
 
 	return runner, nil
 }
 
-func (c *Runner) Start() error {
+func (c *Runner) Start(ctx context.Context) error {
 	var wg sync.WaitGroup
 
 	if err := createAnsibleFiles(c.config.AnsibleFolder); err != nil {
@@ -69,7 +63,7 @@ func (c *Runner) Start() error {
 		retryGo.MaxJitter(3*time.Second),
 		retryGo.Attempts(8),
 		retryGo.LastErrorOnly(true),
-		retryGo.Context(c.ctx),
+		retryGo.Context(ctx),
 	)
 	if err != nil {
 		return err
@@ -81,17 +75,13 @@ func (c *Runner) Start() error {
 	go func(wg *sync.WaitGroup) {
 		log.Println("Starting the runner loop...")
 		defer wg.Done()
-		c.startCheckRunnerTicker()
+		c.startCheckRunnerTicker(ctx)
 		log.Println("Runner loop stopped.")
 	}(&wg)
 
 	wg.Wait()
 
 	return nil
-}
-
-func (c *Runner) Stop() {
-	c.ctxCancel()
 }
 
 func createAnsibleFiles(folder string) error {
@@ -175,7 +165,7 @@ func NewAnsibleCheckRunner(config *Config) (*AnsibleRunner, error) {
 	return ansibleRunner, nil
 }
 
-func (c *Runner) startCheckRunnerTicker() {
+func (c *Runner) startCheckRunnerTicker(ctx context.Context) {
 	checkRunner, err := NewAnsibleCheckRunner(c.config)
 	if err != nil {
 		return
@@ -214,5 +204,5 @@ func (c *Runner) startCheckRunnerTicker() {
 	}
 
 	interval := c.config.Interval
-	internal.Repeat("runner.ansible_playbook", tick, interval, c.ctx)
+	internal.Repeat("runner.ansible_playbook", tick, interval, ctx)
 }

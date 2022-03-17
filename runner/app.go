@@ -79,7 +79,7 @@ func (a *App) Start(ctx context.Context) error {
 
 	log.Infof("Starting runner....")
 	g.Go(func() error {
-		err := a.runner.Start()
+		err := a.runner.Start(ctx)
 		if err != nil {
 			return err
 		}
@@ -90,8 +90,6 @@ func (a *App) Start(ctx context.Context) error {
 		<-ctx.Done()
 		log.Info("Web server is shutting down.")
 		webServer.Close()
-		log.Info("Stopping runner instance")
-		a.runner.Stop()
 	}()
 
 	return g.Wait()
