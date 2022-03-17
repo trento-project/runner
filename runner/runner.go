@@ -24,23 +24,30 @@ const (
 	AnsibleMain       = "ansible/check.yml"
 	AnsibleMeta       = "ansible/meta.yml"
 	AnsibleConfigFile = "ansible/ansible.cfg"
-	AnsibleHostFile   = "ansible/ansible_hosts"
+	AnsibleHostFile   = "ansible/inventories/%s/ansible_hosts"
 )
 
-type Runner struct {
-	config    *Config
-	trentoApi api.TrentoApiService
+type RunnerService interface {
+	Start(ctx context.Context) error
+	IsCatalogReady() bool
 }
 
-func NewRunner(config *Config) (*Runner, error) {
-	runner := &Runner{
+type runnerService struct {
+	config    *Config
+	trentoApi api.TrentoApiService
+	ready     bool
+}
+
+func NewRunnerService(config *Config) (*runnerService, error) {
+	runner := &runnerService{
 		config: config,
+		ready:  false,
 	}
 
 	return runner, nil
 }
 
-func (c *Runner) Start(ctx context.Context) error {
+func (c *runnerService) Start(ctx context.Context) error {
 	var wg sync.WaitGroup
 
 	if err := createAnsibleFiles(c.config.AnsibleFolder); err != nil {
@@ -82,6 +89,10 @@ func (c *Runner) Start(ctx context.Context) error {
 	wg.Wait()
 
 	return nil
+}
+
+func (c *runnerService) IsCatalogReady() bool {
+	return c.ready
 }
 
 func createAnsibleFiles(folder string) error {
@@ -165,7 +176,7 @@ func NewAnsibleCheckRunner(config *Config) (*AnsibleRunner, error) {
 	return ansibleRunner, nil
 }
 
-func (c *Runner) startCheckRunnerTicker(ctx context.Context) {
+func (c *runnerService) startCheckRunnerTicker(ctx context.Context) {
 	checkRunner, err := NewAnsibleCheckRunner(c.config)
 	if err != nil {
 		return

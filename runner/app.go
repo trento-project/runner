@@ -22,9 +22,9 @@ type Config struct {
 }
 
 type App struct {
-	config    *Config
-	webEngine *gin.Engine
-	runner    *Runner
+	config        *Config
+	webEngine     *gin.Engine
+	runnerService RunnerService
 }
 
 func NewApp(config *Config) (*App, error) {
@@ -38,17 +38,18 @@ func NewApp(config *Config) (*App, error) {
 	mode := os.Getenv(gin.EnvGinMode)
 	gin.SetMode(mode)
 
-	runner_instance, err := NewRunner(config)
+	runnerService, err := NewRunnerService(config)
 	if err != nil {
 		log.Errorf("Failed to create the runner instance: %s", err)
 		return nil, err
 	}
 
-	app.runner = runner_instance
+	app.runnerService = runnerService
 
 	apiGroup := engine.Group("/api")
 	{
 		apiGroup.GET("/health", HealthHandler)
+		apiGroup.GET("/ready", ReadyHandler(app.runnerService))
 	}
 
 	app.webEngine = engine
@@ -79,7 +80,7 @@ func (a *App) Start(ctx context.Context) error {
 
 	log.Infof("Starting runner....")
 	g.Go(func() error {
-		err := a.runner.Start(ctx)
+		err := a.runnerService.Start(ctx)
 		if err != nil {
 			return err
 		}
