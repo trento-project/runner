@@ -100,18 +100,6 @@ func (a *App) Start(ctx context.Context) error {
 		return nil
 	})
 
-	// Commenting the Start function as it collides with the catalog creation
-	/*
-		log.Infof("Starting runner....")
-		g.Go(func() error {
-			err := a.deps.runnerService.Start(ctx)
-			if err != nil {
-				return err
-			}
-			return nil
-		})
-	*/
-
 	go func() {
 		<-ctx.Done()
 		log.Info("Web server is shutting down.")
