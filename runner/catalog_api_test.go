@@ -42,9 +42,8 @@ func (suite *CatalogApiTestCase) Test_GetCatalogTest() {
 	mockRunnerService := new(MockRunnerService)
 	mockRunnerService.On("GetCatalog").Return(returnedCatalog)
 
-	deps := Dependencies{
-		mockRunnerService,
-	}
+	deps := setupTestDependencies()
+	deps.runnerService = mockRunnerService
 
 	app, err := NewAppWithDeps(suite.config, deps)
 	if err != nil {
