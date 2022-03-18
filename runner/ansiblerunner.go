@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	CatalogDestination   = "CATALOG_DESTINATION"
 	TrentoWebApiHost     = "TRENTO_WEB_API_HOST"
 	TrentoWebApiPort     = "TRENTO_WEB_API_PORT"
 	AnsibleConfigFileEnv = "ANSIBLE_CONFIG"
@@ -62,6 +63,10 @@ func (a *AnsibleRunner) SetInventory(inventory string) error {
 
 func (a *AnsibleRunner) SetConfigFile(confFile string) {
 	a.setEnv(AnsibleConfigFileEnv, confFile)
+}
+
+func (a *AnsibleRunner) SetCatalogDestination(destination string) {
+	a.setEnv(CatalogDestination, destination)
 }
 
 func (a *AnsibleRunner) SetTrentoApiData(host string, port int) {

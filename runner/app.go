@@ -24,12 +24,32 @@ type Config struct {
 type App struct {
 	config    *Config
 	webEngine *gin.Engine
-	runner    *Runner
+	deps      Dependencies
+}
+
+type Dependencies struct {
+	runnerService RunnerService
+}
+
+func DefaultDependencies(config *Config) Dependencies {
+	runnerService, err := NewRunnerService(config)
+	if err != nil {
+		log.Fatalf("Failed to create the runner instance: %s", err)
+	}
+
+	return Dependencies{
+		runnerService: runnerService,
+	}
 }
 
 func NewApp(config *Config) (*App, error) {
+	return NewAppWithDeps(config, DefaultDependencies(config))
+}
+
+func NewAppWithDeps(config *Config, deps Dependencies) (*App, error) {
 	app := &App{
 		config: config,
+		deps:   deps,
 	}
 
 	engine := gin.New()
@@ -38,17 +58,11 @@ func NewApp(config *Config) (*App, error) {
 	mode := os.Getenv(gin.EnvGinMode)
 	gin.SetMode(mode)
 
-	runner_instance, err := NewRunner(config)
-	if err != nil {
-		log.Errorf("Failed to create the runner instance: %s", err)
-		return nil, err
-	}
-
-	app.runner = runner_instance
-
 	apiGroup := engine.Group("/api")
 	{
 		apiGroup.GET("/health", HealthHandler)
+		apiGroup.GET("/ready", ReadyHandler(deps.runnerService))
+		apiGroup.GET("/catalog", CatalogHandler(deps.runnerService))
 	}
 
 	app.webEngine = engine
@@ -77,9 +91,9 @@ func (a *App) Start(ctx context.Context) error {
 		return nil
 	})
 
-	log.Infof("Starting runner....")
+	log.Infof("Building catalog....")
 	g.Go(func() error {
-		err := a.runner.Start(ctx)
+		err := a.deps.runnerService.BuildCatalog()
 		if err != nil {
 			return err
 		}
