@@ -16,11 +16,17 @@ import (
 var ansibleFS embed.FS
 
 const (
+	executionChannelSize = 99
+
 	AnsibleMain       = "ansible/check.yml"
 	AnsibleMeta       = "ansible/meta.yml"
 	AnsibleConfigFile = "ansible/ansible.cfg"
 	AnsibleHostFile   = "ansible/ansible_hosts"
 )
+
+type ExecutionEvent struct {
+	ID int64 `json:"id" binding:"required"`
+}
 
 //go:generate mockery --name=RunnerService --inpackage --filename=runner_mock.go
 
@@ -28,18 +34,23 @@ type RunnerService interface {
 	IsCatalogReady() bool
 	BuildCatalog() error
 	GetCatalog() map[string]*Catalog
+	GetChannel() chan *ExecutionEvent
+	ScheduleExecution(e *ExecutionEvent) error
+	Execute(e *ExecutionEvent) error
 }
 
 type runnerService struct {
-	config  *Config
-	catalog map[string]*Catalog
-	ready   bool
+	config            *Config
+	workerPoolChannel chan *ExecutionEvent
+	catalog           map[string]*Catalog
+	ready             bool
 }
 
 func NewRunnerService(config *Config) (*runnerService, error) {
 	runner := &runnerService{
-		config: config,
-		ready:  false,
+		config:            config,
+		workerPoolChannel: make(chan *ExecutionEvent, executionChannelSize),
+		ready:             false,
 	}
 
 	return runner, nil
@@ -85,6 +96,25 @@ func (c *runnerService) BuildCatalog() error {
 
 func (c *runnerService) GetCatalog() map[string]*Catalog {
 	return c.catalog
+}
+
+func (c *runnerService) GetChannel() chan *ExecutionEvent {
+	return c.workerPoolChannel
+}
+
+func (c *runnerService) ScheduleExecution(e *ExecutionEvent) error {
+	if len(c.workerPoolChannel) == executionChannelSize {
+		return fmt.Errorf("Cannot process more executions")
+	}
+
+	c.workerPoolChannel <- e
+	log.Infof("Scheduled event: %d", e.ID)
+	return nil
+}
+
+func (c *runnerService) Execute(e *ExecutionEvent) error {
+	log.Infof("Executing event: %d", e.ID)
+	return nil
 }
 
 func createAnsibleFiles(folder string) error {

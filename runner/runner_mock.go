@@ -23,6 +23,20 @@ func (_m *MockRunnerService) BuildCatalog() error {
 	return r0
 }
 
+// Execute provides a mock function with given fields: e
+func (_m *MockRunnerService) Execute(e *ExecutionEvent) error {
+	ret := _m.Called(e)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*ExecutionEvent) error); ok {
+		r0 = rf(e)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetCatalog provides a mock function with given fields:
 func (_m *MockRunnerService) GetCatalog() map[string]*Catalog {
 	ret := _m.Called()
@@ -39,6 +53,22 @@ func (_m *MockRunnerService) GetCatalog() map[string]*Catalog {
 	return r0
 }
 
+// GetChannel provides a mock function with given fields:
+func (_m *MockRunnerService) GetChannel() chan *ExecutionEvent {
+	ret := _m.Called()
+
+	var r0 chan *ExecutionEvent
+	if rf, ok := ret.Get(0).(func() chan *ExecutionEvent); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(chan *ExecutionEvent)
+		}
+	}
+
+	return r0
+}
+
 // IsCatalogReady provides a mock function with given fields:
 func (_m *MockRunnerService) IsCatalogReady() bool {
 	ret := _m.Called()
@@ -48,6 +78,20 @@ func (_m *MockRunnerService) IsCatalogReady() bool {
 		r0 = rf()
 	} else {
 		r0 = ret.Get(0).(bool)
+	}
+
+	return r0
+}
+
+// ScheduleExecution provides a mock function with given fields: e
+func (_m *MockRunnerService) ScheduleExecution(e *ExecutionEvent) error {
+	ret := _m.Called(e)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(*ExecutionEvent) error); ok {
+		r0 = rf(e)
+	} else {
+		r0 = ret.Error(0)
 	}
 
 	return r0
