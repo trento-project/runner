@@ -84,6 +84,24 @@ func (suite *RunnerTestCase) Test_BuildCatalog() {
 	suite.Equal(expectedMap, suite.runnerService.GetCatalog())
 }
 
+func (suite *RunnerTestCase) Test_ScheduleExecution() {
+	execution := &ExecutionEvent{ID: 1}
+	err := suite.runnerService.ScheduleExecution(execution)
+	suite.NoError(err)
+	suite.Equal(execution, <-suite.runnerService.GetChannel())
+}
+
+func (suite *RunnerTestCase) Test_ScheduleExecution_Full() {
+	ch := suite.runnerService.GetChannel()
+	for _, index := range [executionChannelSize]int64{} {
+		ch <- &ExecutionEvent{ID: index}
+	}
+
+	execution := &ExecutionEvent{ID: 1}
+	err := suite.runnerService.ScheduleExecution(execution)
+	suite.EqualError(err, "Cannot process more executions")
+}
+
 // TODO: This test could be improved to check the definitve ansible files structure
 // once we have something fixed
 func (suite *RunnerTestCase) Test_CreateAnsibleFiles() {
