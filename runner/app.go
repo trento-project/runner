@@ -100,6 +100,7 @@ func (a *App) Start(ctx context.Context) error {
 		return nil
 	})
 
+	// Commenting the Start function as it collides with the catalog creation
 	/*
 		log.Infof("Starting runner....")
 		g.Go(func() error {

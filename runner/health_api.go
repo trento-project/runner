@@ -13,9 +13,3 @@ func ReadyHandler(runnerService RunnerService) gin.HandlerFunc {
 		c.JSON(200, map[string]bool{"ready": runnerService.IsCatalogReady()})
 	}
 }
-
-func CatalogHandler(runnerService RunnerService) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		c.JSON(200, runnerService.GetCatalog())
-	}
-}
