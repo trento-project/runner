@@ -22,23 +22,34 @@ type Config struct {
 }
 
 type App struct {
-	config    *Config
-	webEngine *gin.Engine
-	deps      Dependencies
+	config *Config
+	Dependencies
 }
 
 type Dependencies struct {
-	runnerService RunnerService
+	webEngine           *gin.Engine
+	executionWorkerPool *ExecutionWorkerPool
+	runnerService       RunnerService
 }
 
 func DefaultDependencies(config *Config) Dependencies {
+	webEngine := gin.New()
+	webEngine.Use(gin.Recovery())
+
+	mode := os.Getenv(gin.EnvGinMode)
+	gin.SetMode(mode)
+
 	runnerService, err := NewRunnerService(config)
 	if err != nil {
 		log.Fatalf("Failed to create the runner instance: %s", err)
 	}
 
+	executionWorkerPool := NewExecutionWorkerPool(runnerService)
+
 	return Dependencies{
-		runnerService: runnerService,
+		webEngine,
+		executionWorkerPool,
+		runnerService,
 	}
 }
 
@@ -48,24 +59,17 @@ func NewApp(config *Config) (*App, error) {
 
 func NewAppWithDeps(config *Config, deps Dependencies) (*App, error) {
 	app := &App{
-		config: config,
-		deps:   deps,
+		config:       config,
+		Dependencies: deps,
 	}
 
-	engine := gin.New()
-	engine.Use(gin.Recovery())
-
-	mode := os.Getenv(gin.EnvGinMode)
-	gin.SetMode(mode)
-
-	apiGroup := engine.Group("/api")
+	apiGroup := deps.webEngine.Group("/api")
 	{
 		apiGroup.GET("/health", HealthHandler)
 		apiGroup.GET("/ready", ReadyHandler(deps.runnerService))
 		apiGroup.GET("/catalog", CatalogHandler(deps.runnerService))
+		apiGroup.POST("/execute", ExecutionHandler(deps.runnerService))
 	}
-
-	app.webEngine = engine
 
 	return app, nil
 }
@@ -91,9 +95,15 @@ func (a *App) Start(ctx context.Context) error {
 		return nil
 	})
 
+	log.Infof("Starting execution requests worker pool....")
+	g.Go(func() error {
+		a.executionWorkerPool.Run(ctx)
+		return nil
+	})
+
 	log.Infof("Building catalog....")
 	g.Go(func() error {
-		err := a.deps.runnerService.BuildCatalog()
+		err := a.runnerService.BuildCatalog()
 		if err != nil {
 			return err
 		}
