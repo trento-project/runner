@@ -8,6 +8,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 
 	"github.com/trento-project/runner/runner/mocks"
@@ -90,7 +91,7 @@ func (suite *RunnerTestCase) Test_BuildCatalog() {
 }
 
 func (suite *RunnerTestCase) Test_ScheduleExecution() {
-	execution := &ExecutionEvent{ID: 1}
+	execution := &ExecutionEvent{ID: uuid.New()}
 	err := suite.runnerService.ScheduleExecution(execution)
 	suite.NoError(err)
 	suite.Equal(execution, <-suite.runnerService.GetChannel())
@@ -98,29 +99,31 @@ func (suite *RunnerTestCase) Test_ScheduleExecution() {
 
 func (suite *RunnerTestCase) Test_ScheduleExecution_Full() {
 	ch := suite.runnerService.GetChannel()
-	for _, index := range [executionChannelSize]int64{} {
-		ch <- &ExecutionEvent{ID: index}
+	for range [executionChannelSize]int64{} {
+		ch <- &ExecutionEvent{ID: uuid.New()}
 	}
 
-	execution := &ExecutionEvent{ID: 1}
+	execution := &ExecutionEvent{ID: uuid.New()}
 	err := suite.runnerService.ScheduleExecution(execution)
 	suite.EqualError(err, "Cannot process more executions")
 }
 
 func (suite *RunnerTestCase) Test_Execute() {
-	suite.callbacksClient.On("Callback", int64(1), "execution_started", nil).Return(nil)
+	dummyID := uuid.New()
+	suite.callbacksClient.On("Callback", dummyID, "execution_started", nil).Return(nil)
 
-	execution := &ExecutionEvent{ID: 1}
+	execution := &ExecutionEvent{ID: dummyID}
 	err := suite.runnerService.Execute(execution)
 
 	suite.NoError(err)
 }
 
 func (suite *RunnerTestCase) Test_Execute_CallbackError() {
+	dummyID := uuid.New()
 	expectedError := fmt.Errorf("error running callback")
-	suite.callbacksClient.On("Callback", int64(1), "execution_started", nil).Return(expectedError)
+	suite.callbacksClient.On("Callback", dummyID, "execution_started", nil).Return(expectedError)
 
-	execution := &ExecutionEvent{ID: 1}
+	execution := &ExecutionEvent{ID: dummyID}
 	err := suite.runnerService.Execute(execution)
 
 	suite.EqualError(err, expectedError.Error())

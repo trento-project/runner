@@ -7,12 +7,14 @@ import (
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
+
+	"github.com/google/uuid"
 )
 
 //go:generate mockery --name=CallbacksClient
 
 type CallbacksClient interface {
-	Callback(executionID int64, event string, payload interface{}) error
+	Callback(executionID uuid.UUID, event string, payload interface{}) error
 }
 
 type callbacksClient struct {
@@ -29,11 +31,11 @@ func NewCallbacksClient(callbacksUrl string) *callbacksClient {
 	}
 }
 
-func (c *callbacksClient) Callback(executionID int64, event string, payload interface{}) error {
-	log.Debugf("Executing callback for execution %d with event %s", executionID, event)
+func (c *callbacksClient) Callback(executionID uuid.UUID, event string, payload interface{}) error {
+	log.Debugf("Executing callback for execution %s with event %s", executionID, event)
 
 	requestBody, err := json.Marshal(map[string]interface{}{
-		"execution_id": executionID,
+		"execution_id": executionID.String(),
 		"event":        event,
 		"payload":      payload,
 	})
@@ -49,7 +51,7 @@ func (c *callbacksClient) Callback(executionID int64, event string, payload inte
 
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Errorf(
-			"something wrong happened while sending the callback data. Status: %d, Execution: %d, Event: %s",
+			"something wrong happened while sending the callback data. Status: %d, Execution: %s, Event: %s",
 			resp.StatusCode, executionID, event)
 	}
 

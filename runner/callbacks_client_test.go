@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
 	"github.com/trento-project/runner/test/helpers"
 )
@@ -30,9 +31,11 @@ func (suite *CallbacksTestSuite) Test_Callback() {
 		"key": "value",
 	}
 
+	dummyID := uuid.New()
+
 	client.httpClient.Transport = helpers.RoundTripFunc(func(req *http.Request) *http.Response {
 		requestBody, _ := json.Marshal(map[string]interface{}{
-			"execution_id": 1,
+			"execution_id": dummyID,
 			"event":        "new_callback_event",
 			"payload":      payload,
 		})
@@ -47,7 +50,7 @@ func (suite *CallbacksTestSuite) Test_Callback() {
 		}
 	})
 
-	err := client.Callback(1, "new_callback_event", payload)
+	err := client.Callback(dummyID, "new_callback_event", payload)
 
 	suite.NoError(err)
 }

@@ -5,6 +5,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/google/uuid"
 	mock "github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
@@ -19,7 +20,7 @@ func TestWorkerPoolTestCase(t *testing.T) {
 
 func (suite *WorkerPoolTestCase) Test_Run() {
 	channel := make(chan *ExecutionEvent)
-	execution := &ExecutionEvent{ID: 1}
+	execution := &ExecutionEvent{ID: uuid.New()}
 
 	var wg sync.WaitGroup
 	wg.Add(2)

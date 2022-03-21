@@ -9,6 +9,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/google/uuid"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -27,7 +29,7 @@ const (
 )
 
 type ExecutionEvent struct {
-	ID int64 `json:"id" binding:"required"`
+	ID uuid.UUID `json:"id" binding:"required"`
 }
 
 //go:generate mockery --name=RunnerService --inpackage --filename=runner_mock.go
@@ -112,15 +114,15 @@ func (c *runnerService) ScheduleExecution(e *ExecutionEvent) error {
 	}
 
 	c.workerPoolChannel <- e
-	log.Infof("Scheduled event: %d", e.ID)
+	log.Infof("Scheduled event: %s", e.ID.String())
 	return nil
 }
 
 func (c *runnerService) Execute(e *ExecutionEvent) error {
-	log.Infof("Executing event: %d", e.ID)
+	log.Infof("Executing event: %s", e.ID.String())
 	if err := c.callbacksClient.Callback(e.ID, executionStartedEvent, nil); err != nil {
 		log.Errorf(
-			"Error running callback. Execution ID: %d, Event: %s. Err: %s", e.ID, executionStartedEvent, err)
+			"Error running callback. Execution ID: %s, Event: %s. Err: %s", e.ID.String(), executionStartedEvent, err)
 		return err
 	}
 	return nil
