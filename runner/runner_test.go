@@ -1,6 +1,7 @@
 package runner
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -18,8 +19,9 @@ const (
 
 type RunnerTestCase struct {
 	suite.Suite
-	runnerService RunnerService
-	ansibleDir    string
+	runnerService   RunnerService
+	ansibleDir      string
+	callbacksClient *mocks.CallbacksClient
 }
 
 func TestRunnerTestCase(t *testing.T) {
@@ -27,10 +29,13 @@ func TestRunnerTestCase(t *testing.T) {
 }
 
 func (suite *RunnerTestCase) SetupTest() {
+	callbacksClient := new(mocks.CallbacksClient)
 	tmpDir, _ := ioutil.TempDir(os.TempDir(), "trentotest")
 	runnerService, _ := NewRunnerService(&Config{AnsibleFolder: tmpDir})
+	runnerService.callbacksClient = callbacksClient
 	suite.runnerService = runnerService
 	suite.ansibleDir = tmpDir
+	suite.callbacksClient = callbacksClient
 }
 
 func (suite *RunnerTestCase) Test_BuildCatalog() {
@@ -100,6 +105,25 @@ func (suite *RunnerTestCase) Test_ScheduleExecution_Full() {
 	execution := &ExecutionEvent{ID: 1}
 	err := suite.runnerService.ScheduleExecution(execution)
 	suite.EqualError(err, "Cannot process more executions")
+}
+
+func (suite *RunnerTestCase) Test_Execute() {
+	suite.callbacksClient.On("Callback", int64(1), "execution_started", nil).Return(nil)
+
+	execution := &ExecutionEvent{ID: 1}
+	err := suite.runnerService.Execute(execution)
+
+	suite.NoError(err)
+}
+
+func (suite *RunnerTestCase) Test_Execute_CallbackError() {
+	expectedError := fmt.Errorf("error running callback")
+	suite.callbacksClient.On("Callback", int64(1), "execution_started", nil).Return(expectedError)
+
+	execution := &ExecutionEvent{ID: 1}
+	err := suite.runnerService.Execute(execution)
+
+	suite.EqualError(err, expectedError.Error())
 }
 
 // TODO: This test could be improved to check the definitve ansible files structure

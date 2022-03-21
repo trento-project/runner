@@ -22,6 +22,8 @@ const (
 	AnsibleMeta       = "ansible/meta.yml"
 	AnsibleConfigFile = "ansible/ansible.cfg"
 	AnsibleHostFile   = "ansible/ansible_hosts"
+
+	executionStartedEvent = "execution_started"
 )
 
 type ExecutionEvent struct {
@@ -42,6 +44,7 @@ type RunnerService interface {
 type runnerService struct {
 	config            *Config
 	workerPoolChannel chan *ExecutionEvent
+	callbacksClient   CallbacksClient
 	catalog           map[string]*Catalog
 	ready             bool
 }
@@ -50,6 +53,7 @@ func NewRunnerService(config *Config) (*runnerService, error) {
 	runner := &runnerService{
 		config:            config,
 		workerPoolChannel: make(chan *ExecutionEvent, executionChannelSize),
+		callbacksClient:   NewCallbacksClient(config.CallbacksUrl),
 		ready:             false,
 	}
 
@@ -114,6 +118,11 @@ func (c *runnerService) ScheduleExecution(e *ExecutionEvent) error {
 
 func (c *runnerService) Execute(e *ExecutionEvent) error {
 	log.Infof("Executing event: %d", e.ID)
+	if err := c.callbacksClient.Callback(e.ID, executionStartedEvent, nil); err != nil {
+		log.Errorf(
+			"Error running callback. Execution ID: %d, Event: %s. Err: %s", e.ID, executionStartedEvent, err)
+		return err
+	}
 	return nil
 }
 
