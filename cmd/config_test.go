@@ -48,8 +48,7 @@ func (suite *RunnerCmdTestSuite) TearDownTest() {
 	expectedConfig := &runner.Config{
 		Host:          "localhost",
 		Port:          5678,
-		ApiHost:       "some-api-host",
-		ApiPort:       1337,
+		CallbacksUrl:  "http://192.168.1.1:8000/api/runner/callbacks",
 		Interval:      1 * time.Minute,
 		AnsibleFolder: "path/to/ansible",
 	}
@@ -63,8 +62,7 @@ func (suite *RunnerCmdTestSuite) TestConfigFromFlags() {
 		"start",
 		"--host=localhost",
 		"--port=5678",
-		"--api-host=some-api-host",
-		"--api-port=1337",
+		"--callbacks-url=http://192.168.1.1:8000/api/runner/callbacks",
 		"--interval=1",
 		"--ansible-folder=path/to/ansible",
 	})
@@ -73,8 +71,7 @@ func (suite *RunnerCmdTestSuite) TestConfigFromFlags() {
 func (suite *RunnerCmdTestSuite) TestConfigFromEnv() {
 	os.Setenv("TRENTO_RUNNER_HOST", "localhost")
 	os.Setenv("TRENTO_RUNNER_PORT", "5678")
-	os.Setenv("TRENTO_RUNNER_API_HOST", "some-api-host")
-	os.Setenv("TRENTO_RUNNER_API_PORT", "1337")
+	os.Setenv("TRENTO_RUNNER_CALLBACKS_URL", "http://192.168.1.1:8000/api/runner/callbacks")
 	os.Setenv("TRENTO_RUNNER_INTERVAL", "1")
 	os.Setenv("TRENTO_RUNNER_ANSIBLE_FOLDER", "path/to/ansible")
 }

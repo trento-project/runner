@@ -194,7 +194,7 @@ func NewAnsibleCheckRunner(config *Config) (*AnsibleRunner, error) {
 	ansibleRunner.Check = true
 	configFile := path.Join(config.AnsibleFolder, AnsibleConfigFile)
 	ansibleRunner.SetConfigFile(configFile)
-	ansibleRunner.SetTrentoApiData(config.ApiHost, config.ApiPort)
+	ansibleRunner.SetTrentoCallbacksUrl(config.CallbacksUrl)
 
 	return ansibleRunner, nil
 }

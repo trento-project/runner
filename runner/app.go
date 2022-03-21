@@ -15,8 +15,7 @@ import (
 type Config struct {
 	Host          string
 	Port          int
-	ApiHost       string
-	ApiPort       int
+	CallbacksUrl  string
 	Interval      time.Duration
 	AnsibleFolder string
 }

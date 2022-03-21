@@ -117,8 +117,7 @@ func (suite *RunnerTestCase) Test_CreateAnsibleFiles() {
 func (suite *RunnerTestCase) Test_NewAnsibleMetaRunner() {
 
 	cfg := &Config{
-		ApiHost:       "127.0.0.1",
-		ApiPort:       8000,
+		CallbacksUrl:  "http://192.168.1.1:8000/api/runner/callbacks",
 		AnsibleFolder: TestAnsibleFolder,
 	}
 
@@ -140,8 +139,7 @@ func (suite *RunnerTestCase) Test_NewAnsibleMetaRunner() {
 func (suite *RunnerTestCase) Test_NewAnsibleCheckRunner() {
 
 	cfg := &Config{
-		ApiHost:       "127.0.0.1",
-		ApiPort:       8000,
+		CallbacksUrl:  "http://192.168.1.1:8000/api/runner/callbacks",
 		AnsibleFolder: TestAnsibleFolder,
 	}
 
@@ -150,9 +148,8 @@ func (suite *RunnerTestCase) Test_NewAnsibleCheckRunner() {
 	expectedMetaRunner := &AnsibleRunner{
 		Playbook: path.Join(TestAnsibleFolder, "ansible/check.yml"),
 		Envs: map[string]string{
-			"ANSIBLE_CONFIG":      path.Join(TestAnsibleFolder, "ansible/ansible.cfg"),
-			"TRENTO_WEB_API_HOST": "127.0.0.1",
-			"TRENTO_WEB_API_PORT": "8000",
+			"ANSIBLE_CONFIG":       path.Join(TestAnsibleFolder, "ansible/ansible.cfg"),
+			"TRENTO_CALLBACKS_URL": "http://192.168.1.1:8000/api/runner/callbacks",
 		},
 		Check: true,
 	}
