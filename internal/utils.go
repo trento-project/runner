@@ -1,10 +1,6 @@
 package internal
 
 import (
-	"context"
-	"fmt"
-	"time"
-
 	log "github.com/sirupsen/logrus"
 )
 
@@ -29,25 +25,4 @@ func SetLogFormatter(timestampFormat string) {
 	customFormatter.TimestampFormat = timestampFormat
 	log.SetFormatter(customFormatter)
 	customFormatter.FullTimestamp = true
-}
-
-// Repeat executes a function at a given interval.
-// the first tick runs immediately
-func Repeat(operation string, tick func(), interval time.Duration, ctx context.Context) {
-	tick()
-
-	ticker := time.NewTicker(interval)
-	msg := fmt.Sprintf("Next execution for operation %s in %s", operation, interval)
-	log.Debugf(msg)
-
-	defer ticker.Stop()
-	for {
-		select {
-		case <-ticker.C:
-			tick()
-			log.Debugf(msg)
-		case <-ctx.Done():
-			return
-		}
-	}
 }
