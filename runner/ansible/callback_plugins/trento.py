@@ -20,6 +20,8 @@ TEST_RESULT_TASK_NAME = "set_test_result"
 TEST_INCLUDE_TASK_NAME = "run_checks"
 CHECK_ID = "id"
 
+EXECUTION_COMPLETED_EVENT = "execution_completed"
+
 
 class Results(object):
     """
@@ -124,9 +126,8 @@ class CallbackModule(CallbackBase):
         self.playbook = None
         self.play = None
         self.results = Results()
-        host = os.getenv('TRENTO_WEB_API_HOST')
-        port = os.getenv('TRENTO_WEB_API_PORT')
-        self._trento_api_url = "http://{}:{}".format(host, port)
+        self._callbacks_url = os.getenv('TRENTO_CALLBACKS_URL')
+        self._execution_id = os.getenv('TRENTO_EXECUTION_ID')
 
     def v2_playbook_on_start(self, playbook):
         """
@@ -282,8 +283,12 @@ class CallbackModule(CallbackBase):
         """
         Post results to the trento web api server
         """
-        for key, group in results["results"].items():
-            url = "{}/api/checks/{}/results".format(self._trento_api_url, key)
-            response = requests.post(url, json=group)
-            self._display.banner(
-                "Results of {} published. Return code is: {}".format(key, response.status_code))
+        callback_event = {
+            "execution_id": self._execution_id,
+            "event": EXECUTION_COMPLETED_EVENT,
+            "payload": results["results"]
+        }
+        response = requests.post(self._callbacks_url, json=callback_event)
+        self._display.banner(
+            "Results of execution {} published. Return code is: {}".format(
+                self._execution_id, response.status_code))
