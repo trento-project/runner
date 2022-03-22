@@ -40,9 +40,8 @@ func (suite *HealthApiTestCase) Test_ApiReadyTest() {
 	mockRunnerService := new(MockRunnerService)
 	mockRunnerService.On("IsCatalogReady").Return(true)
 
-	deps := Dependencies{
-		mockRunnerService,
-	}
+	deps := setupTestDependencies()
+	deps.runnerService = mockRunnerService
 
 	app, err := NewAppWithDeps(suite.config, deps)
 	if err != nil {
