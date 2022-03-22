@@ -6,10 +6,8 @@ import (
 	"path"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/suite"
-
-	webApi "github.com/trento-project/runner/api"
-	apiMocks "github.com/trento-project/runner/api/mocks"
 )
 
 type InventoryTestSuite struct {
@@ -94,21 +92,60 @@ func (suite *InventoryTestSuite) Test_CreateInventory() {
 }
 
 func (suite *InventoryTestSuite) Test_NewClusterInventoryContent() {
-	apiInst := new(apiMocks.TrentoApiService)
+	cluster1 := uuid.New()
+	cluster2 := uuid.New()
+	executionEvent := &ExecutionEvent{
+		ID: uuid.New(),
+		Clusters: []*Cluster{
+			&Cluster{
+				ID:       cluster1,
+				Provider: "azure",
+				Checks:   []string{"check1", "check2"},
+				Hosts: []*Host{
+					&Host{
+						Name:    "node1",
+						Address: "192.168.10.1",
+						User:    "user1",
+					},
+					&Host{
+						Name:    "node2",
+						Address: "192.168.10.2",
+						User:    "user2",
+					},
+				},
+			},
+			&Cluster{
+				ID:       cluster2,
+				Provider: "azure",
+				Checks:   []string{"check3", "check4"},
+				Hosts: []*Host{
+					&Host{
+						Name:    "node3",
+						Address: "192.168.10.3",
+						User:    "user3",
+					},
+					&Host{
+						Name:    "node4",
+						Address: "192.168.10.4",
+						User:    "user4",
+					},
+				},
+			},
+		},
+	}
 
-	apiInst.On("GetClustersSettings").Return(mockedClustersSettings(), nil)
-
-	content, err := NewClusterInventoryContent(apiInst)
+	content, err := NewClusterInventoryContent(executionEvent)
 
 	expectedContent := &InventoryContent{
 		Groups: []*Group{
 			&Group{
-				Name: "cluster1",
+				Name: cluster1.String(),
 				Nodes: []*Node{
 					&Node{
 						Name: "node1",
 						Variables: map[string]interface{}{
 							"cluster_selected_checks": "[\"check1\",\"check2\"]",
+							"provider":                "azure",
 						},
 						AnsibleHost: "192.168.10.1",
 						AnsibleUser: "user1",
@@ -117,6 +154,7 @@ func (suite *InventoryTestSuite) Test_NewClusterInventoryContent() {
 						Name: "node2",
 						Variables: map[string]interface{}{
 							"cluster_selected_checks": "[\"check1\",\"check2\"]",
+							"provider":                "azure",
 						},
 						AnsibleHost: "192.168.10.2",
 						AnsibleUser: "user2",
@@ -124,23 +162,25 @@ func (suite *InventoryTestSuite) Test_NewClusterInventoryContent() {
 				},
 			},
 			&Group{
-				Name: "cluster2",
+				Name: cluster2.String(),
 				Nodes: []*Node{
 					&Node{
 						Name: "node3",
 						Variables: map[string]interface{}{
 							"cluster_selected_checks": "[\"check3\",\"check4\"]",
+							"provider":                "azure",
 						},
 						AnsibleHost: "192.168.10.3",
-						AnsibleUser: "clouduser",
+						AnsibleUser: "user3",
 					},
 					&Node{
 						Name: "node4",
 						Variables: map[string]interface{}{
 							"cluster_selected_checks": "[\"check3\",\"check4\"]",
+							"provider":                "azure",
 						},
-						AnsibleHost: "",
-						AnsibleUser: "root",
+						AnsibleHost: "192.168.10.4",
+						AnsibleUser: "user4",
 					},
 				},
 			},
@@ -149,42 +189,4 @@ func (suite *InventoryTestSuite) Test_NewClusterInventoryContent() {
 
 	suite.NoError(err)
 	suite.ElementsMatch(expectedContent.Groups, content.Groups)
-	apiInst.AssertExpectations(suite.T())
-}
-
-func mockedClustersSettings() webApi.ClustersSettingsResponse {
-	return webApi.ClustersSettingsResponse{
-		{
-			ID:             "cluster1",
-			SelectedChecks: []string{"check1", "check2"},
-			Hosts: []*webApi.HostConnection{
-				{
-					Name:    "node1",
-					Address: "192.168.10.1",
-					User:    "user1",
-				},
-				{
-					Name:    "node2",
-					Address: "192.168.10.2",
-					User:    "user2",
-				},
-			},
-		},
-		{
-			ID:             "cluster2",
-			SelectedChecks: []string{"check3", "check4"},
-			Hosts: []*webApi.HostConnection{
-				{
-					Name:    "node3",
-					Address: "192.168.10.3",
-					User:    "clouduser",
-				},
-				{
-					Name:    "node4",
-					Address: "",
-					User:    "root",
-				},
-			},
-		},
-	}
 }
