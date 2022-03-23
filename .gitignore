@@ -1,3 +1,6 @@
 /trento-runner
 /build
 /ansible
+/runner/ansible/callback_plugins/*pyc
+/test/ansible_callback_test/.pytest*
+/test/ansible_callback_test/__pycache__

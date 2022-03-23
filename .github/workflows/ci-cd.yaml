@@ -62,10 +62,28 @@ jobs:
       - name: trento checks ID sanity test
         run: python3 hack/id_checker.py
 
+  test-python-callback:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v3
+        with:
+          python-version: 3.7
+      - uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-python-${{ hashFiles('requirements.dev.txt') }}
+      - name: install python dependencies
+        run: pip install -r requirements.dev.txt
+      - name: ansible playbooks and roles lint check
+        run: |
+          cd test/ansible_callback_test
+          pytest -vv
+
   build-and-push-container-images:
     runs-on: ubuntu-20.04
     if: github.event_name == 'release' || (github.event_name == 'push' && github.ref_name == 'main') || github.event_name == 'workflow_dispatch'
-    needs: [test-binary, test-checks]
+    needs: [test-binary, test-checks, test-python-callback]
     permissions:
       contents: read
       packages: write
@@ -102,7 +120,7 @@ jobs:
 
   build-and-export-container-images:
     runs-on: ubuntu-20.04
-    needs: [test-binary, test-checks]
+    needs: [test-binary, test-checks, test-python-callback]
     permissions:
       contents: read
       packages: write
@@ -187,7 +205,7 @@ jobs:
             build/trento-runner-s390x.tgz
 
   release-rolling:
-    needs: [test-binary, test-checks]
+    needs: [test-binary, test-checks, test-python-callback]
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-20.04
     steps:
@@ -209,7 +227,7 @@ jobs:
   # This job doesn't actually make release, but rather reacts to a manual one, made via the GitHub UI.
   # In the future, we might want to reuse the same mechanism of the rolling ones to automate everything here as well.
   release-tag:
-    needs: [test-binary, test-checks]
+    needs: [test-binary, test-checks, test-python-callback]
     if: github.event.release
     runs-on: ubuntu-20.04
     steps:
