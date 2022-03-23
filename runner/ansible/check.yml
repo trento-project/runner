@@ -26,6 +26,7 @@
       register: checks
       run_once: true
       delegate_to: localhost
+      become: false
 
     # Do not change the name. It is use in the trento callback call
     - name: Run checks
