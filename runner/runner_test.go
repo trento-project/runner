@@ -193,6 +193,8 @@ func (suite *RunnerTestCase) Test_NewAnsibleCheckRunner() {
 
 	executionID := uuid.New()
 	clusterID := uuid.New()
+	host1ID := uuid.New()
+	host2ID := uuid.New()
 	executionEvent := &ExecutionEvent{
 		ID: executionID,
 		Clusters: []*Cluster{
@@ -202,12 +204,12 @@ func (suite *RunnerTestCase) Test_NewAnsibleCheckRunner() {
 				Checks:   []string{"check1", "check2"},
 				Hosts: []*Host{
 					&Host{
-						Name:    "node1",
+						ID:      host1ID,
 						Address: "192.168.10.1",
 						User:    "user1",
 					},
 					&Host{
-						Name:    "node2",
+						ID:      host2ID,
 						Address: "192.168.10.2",
 						User:    "user2",
 					},
@@ -234,10 +236,10 @@ func (suite *RunnerTestCase) Test_NewAnsibleCheckRunner() {
 	inventoryContent, err := ioutil.ReadFile(inventoryFile)
 	expectedFile := "\n" +
 		"[%s]\n" +
-		"node1 ansible_host=192.168.10.1 ansible_user=user1 cluster_selected_checks=[\"check1\",\"check2\"] provider=azure \n" +
-		"node2 ansible_host=192.168.10.2 ansible_user=user2 cluster_selected_checks=[\"check1\",\"check2\"] provider=azure \n"
+		"%s ansible_host=192.168.10.1 ansible_user=user1 cluster_selected_checks=[\"check1\",\"check2\"] provider=azure \n" +
+		"%s ansible_host=192.168.10.2 ansible_user=user2 cluster_selected_checks=[\"check1\",\"check2\"] provider=azure \n"
 
 	suite.NoError(err)
 	suite.Equal(expectedChecksRunner, a)
-	suite.Equal(fmt.Sprintf(expectedFile, clusterID.String()), string(inventoryContent))
+	suite.Equal(fmt.Sprintf(expectedFile, clusterID.String(), host1ID.String(), host2ID.String()), string(inventoryContent))
 }

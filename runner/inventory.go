@@ -74,7 +74,7 @@ func NewClusterInventoryContent(e *ExecutionEvent) (*InventoryContent, error) {
 
 		for _, host := range cluster.Hosts {
 			node := &Node{
-				Name:        host.Name,
+				Name:        host.ID.String(),
 				AnsibleHost: host.Address,
 				AnsibleUser: host.User,
 				Variables:   make(map[string]interface{}),

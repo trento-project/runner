@@ -94,6 +94,11 @@ func (suite *InventoryTestSuite) Test_CreateInventory() {
 func (suite *InventoryTestSuite) Test_NewClusterInventoryContent() {
 	cluster1 := uuid.New()
 	cluster2 := uuid.New()
+	host1 := uuid.New()
+	host2 := uuid.New()
+	host3 := uuid.New()
+	host4 := uuid.New()
+
 	executionEvent := &ExecutionEvent{
 		ID: uuid.New(),
 		Clusters: []*Cluster{
@@ -103,12 +108,12 @@ func (suite *InventoryTestSuite) Test_NewClusterInventoryContent() {
 				Checks:   []string{"check1", "check2"},
 				Hosts: []*Host{
 					&Host{
-						Name:    "node1",
+						ID:      host1,
 						Address: "192.168.10.1",
 						User:    "user1",
 					},
 					&Host{
-						Name:    "node2",
+						ID:      host2,
 						Address: "192.168.10.2",
 						User:    "user2",
 					},
@@ -120,12 +125,12 @@ func (suite *InventoryTestSuite) Test_NewClusterInventoryContent() {
 				Checks:   []string{"check3", "check4"},
 				Hosts: []*Host{
 					&Host{
-						Name:    "node3",
+						ID:      host3,
 						Address: "192.168.10.3",
 						User:    "user3",
 					},
 					&Host{
-						Name:    "node4",
+						ID:      host4,
 						Address: "192.168.10.4",
 						User:    "user4",
 					},
@@ -142,7 +147,7 @@ func (suite *InventoryTestSuite) Test_NewClusterInventoryContent() {
 				Name: cluster1.String(),
 				Nodes: []*Node{
 					&Node{
-						Name: "node1",
+						Name: host1.String(),
 						Variables: map[string]interface{}{
 							"cluster_selected_checks": "[\"check1\",\"check2\"]",
 							"provider":                "azure",
@@ -151,7 +156,7 @@ func (suite *InventoryTestSuite) Test_NewClusterInventoryContent() {
 						AnsibleUser: "user1",
 					},
 					&Node{
-						Name: "node2",
+						Name: host2.String(),
 						Variables: map[string]interface{}{
 							"cluster_selected_checks": "[\"check1\",\"check2\"]",
 							"provider":                "azure",
@@ -165,7 +170,7 @@ func (suite *InventoryTestSuite) Test_NewClusterInventoryContent() {
 				Name: cluster2.String(),
 				Nodes: []*Node{
 					&Node{
-						Name: "node3",
+						Name: host3.String(),
 						Variables: map[string]interface{}{
 							"cluster_selected_checks": "[\"check3\",\"check4\"]",
 							"provider":                "azure",
@@ -174,7 +179,7 @@ func (suite *InventoryTestSuite) Test_NewClusterInventoryContent() {
 						AnsibleUser: "user3",
 					},
 					&Node{
-						Name: "node4",
+						Name: host4.String(),
 						Variables: map[string]interface{}{
 							"cluster_selected_checks": "[\"check3\",\"check4\"]",
 							"provider":                "azure",
