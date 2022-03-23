@@ -1,6 +1,5 @@
 host: localhost
 port: 5678
-api-host: some-api-host
-api-port: 1337
+callbacks-url: http://192.168.1.1:8000/api/runner/callbacks
 interval: 1
 ansible-folder: path/to/ansible

@@ -11,8 +11,7 @@ import (
 
 const (
 	CatalogDestination   = "CATALOG_DESTINATION"
-	TrentoWebApiHost     = "TRENTO_WEB_API_HOST"
-	TrentoWebApiPort     = "TRENTO_WEB_API_PORT"
+	TrentoCallbacksUrl   = "TRENTO_CALLBACKS_URL"
 	AnsibleConfigFileEnv = "ANSIBLE_CONFIG"
 )
 
@@ -69,9 +68,8 @@ func (a *AnsibleRunner) SetCatalogDestination(destination string) {
 	a.setEnv(CatalogDestination, destination)
 }
 
-func (a *AnsibleRunner) SetTrentoApiData(host string, port int) {
-	a.setEnv(TrentoWebApiHost, host)
-	a.setEnv(TrentoWebApiPort, fmt.Sprintf("%d", port))
+func (a *AnsibleRunner) SetTrentoCallbacksUrl(callbacksUrl string) {
+	a.setEnv(TrentoCallbacksUrl, callbacksUrl)
 }
 
 func (a *AnsibleRunner) RunPlaybook() error {

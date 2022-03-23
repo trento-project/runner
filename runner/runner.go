@@ -9,6 +9,8 @@ import (
 	"os"
 	"path"
 
+	"github.com/google/uuid"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -22,10 +24,12 @@ const (
 	AnsibleMeta       = "ansible/meta.yml"
 	AnsibleConfigFile = "ansible/ansible.cfg"
 	AnsibleHostFile   = "ansible/ansible_hosts"
+
+	executionStartedEvent = "execution_started"
 )
 
 type ExecutionEvent struct {
-	ID int64 `json:"id" binding:"required"`
+	ID uuid.UUID `json:"id" binding:"required"`
 }
 
 //go:generate mockery --name=RunnerService --inpackage --filename=runner_mock.go
@@ -42,6 +46,7 @@ type RunnerService interface {
 type runnerService struct {
 	config            *Config
 	workerPoolChannel chan *ExecutionEvent
+	callbacksClient   CallbacksClient
 	catalog           map[string]*Catalog
 	ready             bool
 }
@@ -50,6 +55,7 @@ func NewRunnerService(config *Config) (*runnerService, error) {
 	runner := &runnerService{
 		config:            config,
 		workerPoolChannel: make(chan *ExecutionEvent, executionChannelSize),
+		callbacksClient:   NewCallbacksClient(config.CallbacksUrl),
 		ready:             false,
 	}
 
@@ -108,12 +114,17 @@ func (c *runnerService) ScheduleExecution(e *ExecutionEvent) error {
 	}
 
 	c.workerPoolChannel <- e
-	log.Infof("Scheduled event: %d", e.ID)
+	log.Infof("Scheduled event: %s", e.ID.String())
 	return nil
 }
 
 func (c *runnerService) Execute(e *ExecutionEvent) error {
-	log.Infof("Executing event: %d", e.ID)
+	log.Infof("Executing event: %s", e.ID.String())
+	if err := c.callbacksClient.Callback(e.ID, executionStartedEvent, nil); err != nil {
+		log.Errorf(
+			"Error running callback. Execution ID: %s, Event: %s. Err: %s", e.ID.String(), executionStartedEvent, err)
+		return err
+	}
 	return nil
 }
 
@@ -194,7 +205,7 @@ func NewAnsibleCheckRunner(config *Config) (*AnsibleRunner, error) {
 	ansibleRunner.Check = true
 	configFile := path.Join(config.AnsibleFolder, AnsibleConfigFile)
 	ansibleRunner.SetConfigFile(configFile)
-	ansibleRunner.SetTrentoApiData(config.ApiHost, config.ApiPort)
+	ansibleRunner.SetTrentoCallbacksUrl(config.CallbacksUrl)
 
 	return ansibleRunner, nil
 }
