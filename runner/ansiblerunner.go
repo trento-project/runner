@@ -12,6 +12,7 @@ import (
 const (
 	CatalogDestination   = "CATALOG_DESTINATION"
 	TrentoCallbacksUrl   = "TRENTO_CALLBACKS_URL"
+	TrentoExecutionID    = "TRENTO_EXECUTION_ID"
 	AnsibleConfigFileEnv = "ANSIBLE_CONFIG"
 )
 
@@ -70,6 +71,10 @@ func (a *AnsibleRunner) SetCatalogDestination(destination string) {
 
 func (a *AnsibleRunner) SetTrentoCallbacksUrl(callbacksUrl string) {
 	a.setEnv(TrentoCallbacksUrl, callbacksUrl)
+}
+
+func (a *AnsibleRunner) SetTrentoExecutionID(executionID string) {
+	a.setEnv(TrentoExecutionID, executionID)
 }
 
 func (a *AnsibleRunner) RunPlaybook() error {

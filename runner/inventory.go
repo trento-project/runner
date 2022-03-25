@@ -3,11 +3,10 @@ package runner
 import (
 	"encoding/json"
 	"os"
+	"path"
 	"text/template"
 
 	log "github.com/sirupsen/logrus"
-
-	"github.com/trento-project/runner/api"
 )
 
 type InventoryContent struct {
@@ -38,19 +37,22 @@ const (
 {{- end }}
 {{- end }}
 `
-	DefaultUser           string = "root"
 	clusterSelectedChecks string = "cluster_selected_checks"
+	provider              string = "provider"
 )
 
 func CreateInventory(destination string, content *InventoryContent) error {
 	t := template.Must(template.New("").Parse(inventoryTemplate))
 
+	if err := os.MkdirAll(path.Dir(destination), 0755); err != nil {
+		return err
+	}
+
 	f, err := os.Create(destination)
 	if err != nil {
 		return err
 	}
-	err = t.Execute(f, content)
-	if err != nil {
+	if err := t.Execute(f, content); err != nil {
 		return nil
 	}
 	f.Close()
@@ -58,36 +60,32 @@ func CreateInventory(destination string, content *InventoryContent) error {
 	return nil
 }
 
-func NewClusterInventoryContent(trentoApi api.TrentoApiService) (*InventoryContent, error) {
+func NewClusterInventoryContent(e *ExecutionEvent) (*InventoryContent, error) {
 	content := &InventoryContent{}
 
-	clustersSettings, err := trentoApi.GetClustersSettings()
-	if err != nil {
-		return nil, err
-	}
-
-	for _, cluster := range clustersSettings {
+	for _, cluster := range e.Clusters {
 		nodes := []*Node{}
 
-		jsonSelectedChecks, err := json.Marshal(cluster.SelectedChecks)
+		jsonChecks, err := json.Marshal(cluster.Checks)
 		if err != nil {
-			log.Errorf("error marshalling the cluster %s selected checks: %s", cluster.ID, err)
+			log.Errorf("error marshalling the cluster %s selected checks: %s", cluster.ID.String(), err)
 			continue
 		}
 
 		for _, host := range cluster.Hosts {
 			node := &Node{
-				Name:        host.Name,
+				Name:        host.ID.String(),
 				AnsibleHost: host.Address,
 				AnsibleUser: host.User,
 				Variables:   make(map[string]interface{}),
 			}
 
-			node.Variables[clusterSelectedChecks] = string(jsonSelectedChecks)
+			node.Variables[clusterSelectedChecks] = string(jsonChecks)
+			node.Variables[provider] = cluster.Provider
 
 			nodes = append(nodes, node)
 		}
-		group := &Group{Name: cluster.ID, Nodes: nodes}
+		group := &Group{Name: cluster.ID.String(), Nodes: nodes}
 
 		content.Groups = append(content.Groups, group)
 	}

@@ -9,8 +9,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/google/uuid"
-
 	log "github.com/sirupsen/logrus"
 )
 
@@ -20,17 +18,13 @@ var ansibleFS embed.FS
 const (
 	executionChannelSize = 99
 
-	AnsibleMain       = "ansible/check.yml"
-	AnsibleMeta       = "ansible/meta.yml"
-	AnsibleConfigFile = "ansible/ansible.cfg"
-	AnsibleHostFile   = "ansible/ansible_hosts"
+	AnsibleMain        = "ansible/check.yml"
+	AnsibleMeta        = "ansible/meta.yml"
+	AnsibleConfigFile  = "ansible/ansible.cfg"
+	AnsibleInventories = "ansible/inventories/%s/ansible_hosts"
 
 	executionStartedEvent = "execution_started"
 )
-
-type ExecutionEvent struct {
-	ID uuid.UUID `json:"id" binding:"required"`
-}
 
 //go:generate mockery --name=RunnerService --inpackage --filename=runner_mock.go
 
@@ -125,6 +119,19 @@ func (c *runnerService) Execute(e *ExecutionEvent) error {
 			"Error running callback. Execution ID: %s, Event: %s. Err: %s", e.ID.String(), executionStartedEvent, err)
 		return err
 	}
+
+	checksRunner, err := NewAnsibleCheckRunner(c.config, e)
+	if err != nil {
+		return err
+	}
+
+	defer os.RemoveAll(path.Dir(checksRunner.Inventory))
+
+	if err := checksRunner.RunPlaybook(); err != nil {
+		log.Errorf("Error running the checks playbook")
+		return err
+	}
+
 	return nil
 }
 
@@ -193,7 +200,7 @@ func NewAnsibleMetaRunner(config *Config) (*AnsibleRunner, error) {
 	return ansibleRunner, nil
 }
 
-func NewAnsibleCheckRunner(config *Config) (*AnsibleRunner, error) {
+func NewAnsibleCheckRunner(config *Config, executionEvent *ExecutionEvent) (*AnsibleRunner, error) {
 	playbookPath := path.Join(config.AnsibleFolder, AnsibleMain)
 
 	ansibleRunner := DefaultAnsibleRunner()
@@ -206,6 +213,26 @@ func NewAnsibleCheckRunner(config *Config) (*AnsibleRunner, error) {
 	configFile := path.Join(config.AnsibleFolder, AnsibleConfigFile)
 	ansibleRunner.SetConfigFile(configFile)
 	ansibleRunner.SetTrentoCallbacksUrl(config.CallbacksUrl)
+	ansibleRunner.SetTrentoExecutionID(executionEvent.ID.String())
+
+	inventoryContent, err := NewClusterInventoryContent(executionEvent)
+	if err != nil {
+		log.Errorf("Error generating inventory content: %s", err)
+		return nil, err
+	}
+
+	inventoryFile := path.Join(
+		config.AnsibleFolder, fmt.Sprintf(AnsibleInventories, executionEvent.ID.String()))
+
+	if err := CreateInventory(inventoryFile, inventoryContent); err != nil {
+		log.Errorf("Error creating the inventory file: %s", err)
+		return nil, err
+	}
+
+	if err := ansibleRunner.SetInventory(inventoryFile); err != nil {
+		log.Errorf("Error setting the inventory file")
+		return nil, err
+	}
 
 	return ansibleRunner, nil
 }

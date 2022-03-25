@@ -109,8 +109,25 @@ func (suite *RunnerTestCase) Test_ScheduleExecution_Full() {
 }
 
 func (suite *RunnerTestCase) Test_Execute() {
+	os.MkdirAll(path.Join(suite.ansibleDir, "ansible"), 0755)
+	os.Create(path.Join(suite.ansibleDir, "ansible/check.yml"))
+	defer os.RemoveAll(suite.ansibleDir)
+
 	dummyID := uuid.New()
 	suite.callbacksClient.On("Callback", dummyID, "execution_started", nil).Return(nil)
+
+	cmd := exec.Command("ls") // Dummy command to execute something
+
+	mockCommand := new(mocks.CustomCommand)
+	customExecCommand = mockCommand.Execute
+
+	mockCommand.On(
+		"Execute",
+		"ansible-playbook",
+		path.Join(suite.ansibleDir, "ansible/check.yml"),
+		fmt.Sprintf("--inventory=%s/ansible/inventories/%s/ansible_hosts", suite.ansibleDir, dummyID.String()),
+		"--check",
+	).Return(cmd)
 
 	execution := &ExecutionEvent{ID: dummyID}
 	err := suite.runnerService.Execute(execution)
@@ -164,23 +181,65 @@ func (suite *RunnerTestCase) Test_NewAnsibleMetaRunner() {
 }
 
 func (suite *RunnerTestCase) Test_NewAnsibleCheckRunner() {
+	tmpDir, _ := ioutil.TempDir(os.TempDir(), "trentotest")
+	os.MkdirAll(path.Join(tmpDir, "ansible"), 0755)
+	os.Create(path.Join(tmpDir, "ansible/check.yml"))
+	defer os.RemoveAll(tmpDir)
 
 	cfg := &Config{
 		CallbacksUrl:  "http://192.168.1.1:8000/api/runner/callbacks",
-		AnsibleFolder: TestAnsibleFolder,
+		AnsibleFolder: tmpDir,
 	}
 
-	a, err := NewAnsibleCheckRunner(cfg)
+	executionID := uuid.New()
+	clusterID := uuid.New()
+	host1ID := uuid.New()
+	host2ID := uuid.New()
+	executionEvent := &ExecutionEvent{
+		ID: executionID,
+		Clusters: []*Cluster{
+			&Cluster{
+				ID:       clusterID,
+				Provider: "azure",
+				Checks:   []string{"check1", "check2"},
+				Hosts: []*Host{
+					&Host{
+						ID:      host1ID,
+						Address: "192.168.10.1",
+						User:    "user1",
+					},
+					&Host{
+						ID:      host2ID,
+						Address: "192.168.10.2",
+						User:    "user2",
+					},
+				},
+			},
+		},
+	}
 
-	expectedMetaRunner := &AnsibleRunner{
-		Playbook: path.Join(TestAnsibleFolder, "ansible/check.yml"),
+	a, err := NewAnsibleCheckRunner(cfg, executionEvent)
+
+	inventoryFile := path.Join(tmpDir, fmt.Sprintf("ansible/inventories/%s/ansible_hosts", executionID.String()))
+
+	expectedChecksRunner := &AnsibleRunner{
+		Playbook:  path.Join(tmpDir, "ansible/check.yml"),
+		Inventory: inventoryFile,
 		Envs: map[string]string{
-			"ANSIBLE_CONFIG":       path.Join(TestAnsibleFolder, "ansible/ansible.cfg"),
+			"ANSIBLE_CONFIG":       path.Join(tmpDir, "ansible/ansible.cfg"),
 			"TRENTO_CALLBACKS_URL": "http://192.168.1.1:8000/api/runner/callbacks",
+			"TRENTO_EXECUTION_ID":  executionID.String(),
 		},
 		Check: true,
 	}
 
+	inventoryContent, err := ioutil.ReadFile(inventoryFile)
+	expectedFile := "\n" +
+		"[%s]\n" +
+		"%s ansible_host=192.168.10.1 ansible_user=user1 cluster_selected_checks=[\"check1\",\"check2\"] provider=azure \n" +
+		"%s ansible_host=192.168.10.2 ansible_user=user2 cluster_selected_checks=[\"check1\",\"check2\"] provider=azure \n"
+
 	suite.NoError(err)
-	suite.Equal(expectedMetaRunner, a)
+	suite.Equal(expectedChecksRunner, a)
+	suite.Equal(fmt.Sprintf(expectedFile, clusterID.String(), host1ID.String(), host2ID.String()), string(inventoryContent))
 }
