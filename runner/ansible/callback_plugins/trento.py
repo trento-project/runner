@@ -8,6 +8,7 @@ Trento Callback executor.
 :since: 2021-09-16
 """
 
+import logging
 import os
 import yaml
 import requests
@@ -23,94 +24,174 @@ CHECK_ID = "id"
 EXECUTION_COMPLETED_EVENT = "execution_completed"
 
 
-class Results(object):
+class ExecutionResults(object):
     """
     Object to store and user the execution results
 
     Result example:
 
-    "results": {
-        "clusterId": {
-            "hosts": {
-                "host1": {
-                    "reachable": true,
-                    "msg": ""
-                },
-                "host2": {
-                    "reachable": false,
-                    "msg": "Failed to connect to the host via ssh: ..."
-                },
-            }
-            "checks": {
-                "ABCDEF": {
-                    "hosts": {
-                        "host1": {
-                            "result": "passing",
-                            "msg": "",
-                        }
-                    }
-                }
-            }
-        }
-    }
+    [
+      {
+        "cluster_id": "cluster1",
+        "hosts": [
+          {
+            "host_id": "host1",
+            "name": "host1",
+            "reachable": true,
+            "msg": "some message",
+            "results": [
+              {
+                "host_id": "host1",
+                "check: "check1",
+                "result": "passing",
+                "msg": "some message"
+              },
+              {
+                "host_id": "host2",
+                "check: "check1",
+                "result": "warning",
+                "msg": "some message"
+              }
+            ]
+          }
+        ]
+      }
+    ]
     """
     def __init__(self):
-        self.results = {"results": {}}
+        self._logger = logging.getLogger(__name__)
+        self.clusters = []
 
-    def initialize_group(self, group):
+    def initialize_cluster(self, cluster_id):
         """
         Initialize the group on the results dictionary
         """
-        if group not in self.results["results"]:
-            self.results["results"][group] = {}
-            self.results["results"][group]["hosts"] = {}
-            self.results["results"][group]["checks"] = {}
+        cluster = [cluster for cluster in self.clusters if cluster.cluster_id == cluster_id]
+        if cluster:
+            self._logger.error("cluster with id %s already initialized", cluster_id)
+            return
 
-    def add_result(self, group, test, host, result, msg=""):
+        self.clusters.append(Cluster(cluster_id))
+
+    def add_host(self, cluster_id, host_id, state, msg=""):
         """
-        Add new result
+        Add the host state. Reachable or Unreachable
         """
-        # Add the group just in case it doesn't exist
-        if group not in self.results["results"]:
-            self.results["results"][group] = {}
-            self.results["results"][group]["checks"] = {}
+        for cluster in self.clusters:
+            if cluster.cluster_id == cluster_id:
+                cluster.add_host(host_id, state, msg)
+                break
 
-        checks = self.results["results"][group]["checks"]
-        if test not in checks:
-            checks[test] = {}
-            checks[test]["hosts"] = {}
-
-        hosts = checks[test]["hosts"]
-        if host not in hosts:
-            hosts[host] = {}
-
-        hosts[host]["result"] = result
-        hosts[host]["msg"] = msg
-
-    def result_exist(self, group, test, host):
+    def add_result(self, cluster_id, host_id, check_id, result, msg=""):
         """
-        Check if the result already exists
+        Add check result
         """
-        try:
-            return bool(self.results["results"][group]["checks"][test]["hosts"][host]["result"])
-        except KeyError:
-            return False
+        for cluster in self.clusters:
+            if cluster.cluster_id == cluster_id:
+                cluster.add_result(host_id, check_id, result, msg)
+                break
 
-    def set_host_state(self, group, host, state, msg=""):
+    def to_dict(self):
+        """
+        Transform to dictionary
+        """
+        return [cluster.to_dict() for cluster in self.clusters]
+
+
+class Cluster(object):
+    """
+    Cluster data object
+    """
+
+    def __init__(self, cluster_id):
+        self.cluster_id = cluster_id
+        self.hosts = []
+
+    def add_host(self, host_id, state, msg=""):
         """
         Set the host state. Reachable or Unreachable
         """
-        # Add the group just in case it doesn't exist
-        if group not in self.results["results"]:
-            self.results["results"][group] = {}
-            self.results["results"][group]["hosts"] = {}
+        for host in self.hosts:
+            if host.host_id == host_id:
+                host.reachable = state
+                host.msg = msg
+                break
+        else:
+            self.hosts.append(Host(host_id, state, msg))
 
-        hosts = self.results["results"][group]["hosts"]
-        if host not in hosts:
-            hosts[host] = {}
+    def add_result(self, host_id, check_id, result, msg=""):
+        """
+        Add check result
+        """
+        for host in self.hosts:
+            if host.host_id == host_id:
+                host.add_result(check_id, result, msg)
+                break
 
-        hosts[host]["reachable"] = state
-        hosts[host]["msg"] = msg
+    def to_dict(self):
+        """
+        Transform to dictionary
+        """
+        return {
+            "cluster_id": self.cluster_id,
+            "hosts": [host.to_dict() for host in self.hosts]
+        }
+
+
+class Host(object):
+    """
+    Host data object
+    """
+
+    def __init__(self, host_id, reachable, msg):
+        self.host_id = host_id
+        self.results = []
+        self.reachable = reachable
+        self.msg = msg
+
+    def add_result(self, check_id, result, msg=""):
+        """
+        Add check result
+        """
+        for result_item in self.results:
+            if result_item.check_id == check_id:
+                result_item.result = result
+                result_item.msg = msg
+                break
+        else:
+            self.results.append(CheckResult(check_id, result, msg))
+
+    def to_dict(self):
+        """
+        Transform to dictionary
+        """
+        return {
+            "host_id": self.host_id,
+            "reachable": self.reachable,
+            "results": [result.to_dict() for result in self.results],
+            "msg": self.msg
+        }
+
+
+class CheckResult(object):
+    """
+    Check result data object
+    """
+
+    def __init__(self, check_id, result, msg):
+        self.check_id = check_id
+        self.result = result
+        self.msg = msg
+
+    def to_dict(self):
+        """
+        Transform to dictionary
+        """
+        return {
+            "check_id": str(self.check_id),
+            "result": self.result,
+            "msg": self.msg
+        }
 
 
 class CallbackModule(CallbackBase):
@@ -123,25 +204,26 @@ class CallbackModule(CallbackBase):
 
     def __init__(self):
         super(CallbackModule, self).__init__()
-        self.playbook = None
         self.play = None
-        self.results = Results()
+        self.execution_results = ExecutionResults()
         self._callbacks_url = os.getenv('TRENTO_CALLBACKS_URL')
         self._execution_id = os.getenv('TRENTO_EXECUTION_ID')
 
-    def v2_playbook_on_start(self, playbook):
+    def v2_playbook_on_start(self, _):
         """
         On start callback
         """
-        self._display.banner("Trento callback loaded")
-        self.playbook = playbook
+        self._display.banner("Trento callbacks plugin loaded")
 
     def v2_playbook_on_play_start(self, play):
         """
         On Play start callback
         """
         self.play = play
-        self._initialize_results()
+        play_vars = self._all_vars()
+        for _, host_data in play_vars["hostvars"].items():
+            for group in host_data["group_names"]:
+                self.execution_results.initialize_cluster(group)
 
     def v2_runner_on_ok(self, result):
         """
@@ -159,10 +241,8 @@ class CallbackModule(CallbackBase):
 
         test_result = result._task_fields["args"]["test_result"]
         for group in task_vars["group_names"]:
-            self.results.set_host_state(group, host, True)
-            if self.results.result_exist(group, task_vars[CHECK_ID], host):
-                continue
-            self.results.add_result(group, task_vars[CHECK_ID], host, test_result)
+            self.execution_results.add_host(group, host, True)
+            self.execution_results.add_result(group, host, task_vars[CHECK_ID], test_result)
 
     def v2_runner_on_failed(self, result, ignore_errors):
         """
@@ -177,8 +257,8 @@ class CallbackModule(CallbackBase):
         msg = result._check_key("msg")
 
         for group in task_vars["group_names"]:
-            self.results.set_host_state(group, host, True)
-            self.results.add_result(group, task_vars[CHECK_ID], host, "warning", msg)
+            self.execution_results.add_host(group, host, True)
+            self.execution_results.add_result(group, host, task_vars[CHECK_ID], "warning", msg)
 
     def v2_runner_on_skipped(self, result):
         """
@@ -196,7 +276,7 @@ class CallbackModule(CallbackBase):
         msg = result._check_key("msg")
 
         for group in task_vars["group_names"]:
-            self.results.set_host_state(group, host, False, msg)
+            self.execution_results.add_host(group, host, False, msg)
 
     def v2_playbook_on_stats(self, _stats):
         """
@@ -206,7 +286,7 @@ class CallbackModule(CallbackBase):
             return
 
         self._display.banner("Publishing Trento results")
-        self._post_results(self.results.results)
+        self._post_results()
 
     def _all_vars(self, host=None, task=None):
         """
@@ -220,15 +300,6 @@ class CallbackModule(CallbackBase):
             host=host,
             task=task
         )
-
-    def _initialize_results(self):
-        """
-        Initialize the results object
-        """
-        play_vars = self._all_vars()
-        for _, host_data in play_vars["hostvars"].items():
-            for group in host_data["group_names"]:
-                self.results.initialize_group(group)
 
     def _is_test_execution(self):
         """
@@ -276,17 +347,17 @@ class CallbackModule(CallbackBase):
                     check_id = data[CHECK_ID]
 
                 for group in task_vars["group_names"]:
-                    self.results.set_host_state(group, host, True)
-                    self.results.add_result(group, check_id, host, "skipped")
+                    self.execution_results.add_host(group, host, True)
+                    self.execution_results.add_result(group, host, check_id, "skipped")
 
-    def _post_results(self, results):
+    def _post_results(self):
         """
         Post results to the trento web api server
         """
         callback_event = {
             "execution_id": self._execution_id,
             "event": EXECUTION_COMPLETED_EVENT,
-            "payload": results["results"]
+            "payload": self.execution_results.to_dict()
         }
         response = requests.post(self._callbacks_url, json=callback_event)
         self._display.banner(
