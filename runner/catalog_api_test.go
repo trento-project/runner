@@ -22,20 +22,17 @@ func (suite *CatalogApiTestCase) SetupTest() {
 }
 
 func (suite *CatalogApiTestCase) Test_GetCatalogTest() {
-	returnedCatalog := map[string]*Catalog{
-		"azure": &Catalog{
-			Checks: []*CatalogCheck{
-				{
-					ID:             "156F64",
-					Name:           "1.1.1",
-					Group:          "Corosync",
-					Description:    "description azure",
-					Remediation:    "remediation",
-					Implementation: "implementation",
-					Labels:         "generic",
-					Premium:        false,
-				},
-			},
+	returnedCatalog := &Catalog{
+		&CatalogCheck{
+			ID:             "156F64",
+			Name:           "1.1.1",
+			Group:          "Corosync",
+			Provider:       "azure",
+			Description:    "description azure",
+			Remediation:    "remediation",
+			Implementation: "implementation",
+			Labels:         "generic",
+			Premium:        false,
 		},
 	}
 

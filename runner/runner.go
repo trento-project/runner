@@ -31,7 +31,7 @@ const (
 type RunnerService interface {
 	IsCatalogReady() bool
 	BuildCatalog() error
-	GetCatalog() map[string]*Catalog
+	GetCatalog() *Catalog
 	GetChannel() chan *ExecutionEvent
 	ScheduleExecution(e *ExecutionEvent) error
 	Execute(e *ExecutionEvent) error
@@ -41,7 +41,7 @@ type runnerService struct {
 	config            *Config
 	workerPoolChannel chan *ExecutionEvent
 	callbacksClient   CallbacksClient
-	catalog           map[string]*Catalog
+	catalog           *Catalog
 	ready             bool
 }
 
@@ -77,13 +77,13 @@ func (c *runnerService) BuildCatalog() error {
 	}
 
 	// After the playbook is done, recover back the file content
-	catalogRaw, err := ioutil.ReadFile(metaRunner.Envs[CatalogDestination])
+	catalogFile, err := ioutil.ReadFile(metaRunner.Envs[CatalogDestination])
 	if err != nil {
 		log.Fatal("Error when opening the catalog file: ", err)
 	}
 
-	var catalog map[string]*Catalog
-	err = json.Unmarshal(catalogRaw, &catalog)
+	var catalog *Catalog
+	err = json.Unmarshal(catalogFile, &catalog)
 	if err != nil {
 		log.Fatal("Error during Unmarshal(): ", err)
 	}
@@ -94,7 +94,7 @@ func (c *runnerService) BuildCatalog() error {
 	return nil
 }
 
-func (c *runnerService) GetCatalog() map[string]*Catalog {
+func (c *runnerService) GetCatalog() *Catalog {
 	return c.catalog
 }
 

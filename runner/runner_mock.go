@@ -38,15 +38,15 @@ func (_m *MockRunnerService) Execute(e *ExecutionEvent) error {
 }
 
 // GetCatalog provides a mock function with given fields:
-func (_m *MockRunnerService) GetCatalog() map[string]*Catalog {
+func (_m *MockRunnerService) GetCatalog() *Catalog {
 	ret := _m.Called()
 
-	var r0 map[string]*Catalog
-	if rf, ok := ret.Get(0).(func() map[string]*Catalog); ok {
+	var r0 *Catalog
+	if rf, ok := ret.Get(0).(func() *Catalog); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]*Catalog)
+			r0 = ret.Get(0).(*Catalog)
 		}
 	}
 

@@ -1,32 +1,24 @@
-{
-  "azure":
+[
   {
-    "checks": [
-      {
-        "group": "Corosync",
-        "name": "1.1.1",
-        "implementation": "implementation",
-        "labels": "generic",
-        "remediation": "remediation",
-        "premium": false,
-        "id": "156F64",
-        "description": "description azure"
-      }
-    ]
+    "group": "Corosync",
+    "provider": "azure",
+    "name": "1.1.1",
+    "implementation": "implementation",
+    "labels": "generic",
+    "remediation": "remediation",
+    "premium": false,
+    "id": "156F64",
+    "description": "description azure"
   },
-  "dev":
   {
-    "checks": [
-      {
-        "group": "Corosync",
-        "name": "1.1.1",
-        "implementation": "implementation",
-        "labels": "generic",
-        "remediation": "remediation",
-        "premium": false,
-        "id": "156F64",
-        "description": "description dev"
-      }
-    ]
+    "group": "Corosync",
+    "provider": "dev",
+    "name": "1.1.1",
+    "implementation": "implementation",
+    "labels": "generic",
+    "remediation": "remediation",
+    "premium": false,
+    "id": "156F64",
+    "description": "description dev"
   }
-}
+]

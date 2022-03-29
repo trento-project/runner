@@ -54,40 +54,34 @@ func (suite *RunnerTestCase) Test_BuildCatalog() {
 
 	err := suite.runnerService.BuildCatalog()
 
-	expectedMap := map[string]*Catalog{
-		"azure": &Catalog{
-			Checks: []*CatalogCheck{
-				{
-					ID:             "156F64",
-					Name:           "1.1.1",
-					Group:          "Corosync",
-					Description:    "description azure",
-					Remediation:    "remediation",
-					Implementation: "implementation",
-					Labels:         "generic",
-					Premium:        false,
-				},
-			},
+	expectedCatalog := &Catalog{
+		&CatalogCheck{
+			ID:             "156F64",
+			Name:           "1.1.1",
+			Group:          "Corosync",
+			Provider:       "azure",
+			Description:    "description azure",
+			Remediation:    "remediation",
+			Implementation: "implementation",
+			Labels:         "generic",
+			Premium:        false,
 		},
-		"dev": &Catalog{
-			Checks: []*CatalogCheck{
-				{
-					ID:             "156F64",
-					Name:           "1.1.1",
-					Group:          "Corosync",
-					Description:    "description dev",
-					Remediation:    "remediation",
-					Implementation: "implementation",
-					Labels:         "generic",
-					Premium:        false,
-				},
-			},
+		&CatalogCheck{
+			ID:             "156F64",
+			Name:           "1.1.1",
+			Group:          "Corosync",
+			Provider:       "dev",
+			Description:    "description dev",
+			Remediation:    "remediation",
+			Implementation: "implementation",
+			Labels:         "generic",
+			Premium:        false,
 		},
 	}
 
 	suite.NoError(err)
 	suite.Equal(true, suite.runnerService.IsCatalogReady())
-	suite.Equal(expectedMap, suite.runnerService.GetCatalog())
+	suite.Equal(expectedCatalog, suite.runnerService.GetCatalog())
 }
 
 func (suite *RunnerTestCase) Test_ScheduleExecution() {
