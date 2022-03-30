@@ -21,7 +21,27 @@ func (suite *CatalogApiTestCase) SetupTest() {
 	suite.config = &Config{}
 }
 
-func (suite *CatalogApiTestCase) Test_GetCatalogTest() {
+func (suite *CatalogApiTestCase) Test_GetCatalogTest_NotReady() {
+	mockRunnerService := new(MockRunnerService)
+	mockRunnerService.On("IsCatalogReady").Return(false)
+
+	deps := setupTestDependencies()
+	deps.runnerService = mockRunnerService
+
+	app, err := NewAppWithDeps(suite.config, deps)
+	if err != nil {
+		suite.T().Fatal(err)
+	}
+
+	resp := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/api/catalog", nil)
+	app.webEngine.ServeHTTP(resp, req)
+
+	suite.Equal(204, resp.Code)
+	suite.Equal("", resp.Body.String())
+}
+
+func (suite *CatalogApiTestCase) Test_GetCatalogTest_Ready() {
 	returnedCatalog := &Catalog{
 		&CatalogCheck{
 			ID:             "156F64",
@@ -37,6 +57,7 @@ func (suite *CatalogApiTestCase) Test_GetCatalogTest() {
 	}
 
 	mockRunnerService := new(MockRunnerService)
+	mockRunnerService.On("IsCatalogReady").Return(true)
 	mockRunnerService.On("GetCatalog").Return(returnedCatalog)
 
 	deps := setupTestDependencies()
