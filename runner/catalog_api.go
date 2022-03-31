@@ -6,6 +6,10 @@ import (
 
 func CatalogHandler(runnerService RunnerService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(200, runnerService.GetCatalog())
+		if runnerService.IsCatalogReady() {
+			c.JSON(200, runnerService.GetCatalog())
+		} else {
+			c.JSON(204, nil)
+		}
 	}
 }
