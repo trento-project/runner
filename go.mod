@@ -13,7 +13,7 @@ require (
 	github.com/spf13/pflag v1.0.5
 	github.com/spf13/viper v1.10.1
 	github.com/stretchr/testify v1.7.1
-	github.com/swaggo/swag v1.8.0
+	github.com/swaggo/swag v1.8.1
 	github.com/vektra/mockery/v2 v2.10.2
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
