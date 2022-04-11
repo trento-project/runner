@@ -85,7 +85,7 @@ func (suite *RunnerTestCase) Test_BuildCatalog() {
 }
 
 func (suite *RunnerTestCase) Test_ScheduleExecution() {
-	execution := &ExecutionEvent{ID: uuid.New()}
+	execution := &ExecutionEvent{ExecutionID: uuid.New()}
 	err := suite.runnerService.ScheduleExecution(execution)
 	suite.NoError(err)
 	suite.Equal(execution, <-suite.runnerService.GetChannel())
@@ -94,10 +94,10 @@ func (suite *RunnerTestCase) Test_ScheduleExecution() {
 func (suite *RunnerTestCase) Test_ScheduleExecution_Full() {
 	ch := suite.runnerService.GetChannel()
 	for range [executionChannelSize]int64{} {
-		ch <- &ExecutionEvent{ID: uuid.New()}
+		ch <- &ExecutionEvent{ExecutionID: uuid.New()}
 	}
 
-	execution := &ExecutionEvent{ID: uuid.New()}
+	execution := &ExecutionEvent{ExecutionID: uuid.New()}
 	err := suite.runnerService.ScheduleExecution(execution)
 	suite.EqualError(err, "Cannot process more executions")
 }
@@ -108,7 +108,10 @@ func (suite *RunnerTestCase) Test_Execute() {
 	defer os.RemoveAll(suite.ansibleDir)
 
 	dummyID := uuid.New()
-	suite.callbacksClient.On("Callback", dummyID, "execution_started", nil).Return(nil)
+	clusterDummyID := uuid.New()
+	executionStartedPayload := map[string]string{"cluster_id": clusterDummyID.String()}
+	suite.callbacksClient.On(
+		"Callback", dummyID, "execution_started", executionStartedPayload).Return(nil)
 
 	cmd := exec.Command("ls") // Dummy command to execute something
 
@@ -123,7 +126,7 @@ func (suite *RunnerTestCase) Test_Execute() {
 		"--check",
 	).Return(cmd)
 
-	execution := &ExecutionEvent{ID: dummyID}
+	execution := &ExecutionEvent{ExecutionID: dummyID, ClusterID: clusterDummyID}
 	err := suite.runnerService.Execute(execution)
 
 	suite.NoError(err)
@@ -131,10 +134,13 @@ func (suite *RunnerTestCase) Test_Execute() {
 
 func (suite *RunnerTestCase) Test_Execute_CallbackError() {
 	dummyID := uuid.New()
+	clusterDummyID := uuid.New()
 	expectedError := fmt.Errorf("error running callback")
-	suite.callbacksClient.On("Callback", dummyID, "execution_started", nil).Return(expectedError)
+	executionStartedPayload := map[string]string{"cluster_id": clusterDummyID.String()}
+	suite.callbacksClient.On(
+		"Callback", dummyID, "execution_started", executionStartedPayload).Return(expectedError)
 
-	execution := &ExecutionEvent{ID: dummyID}
+	execution := &ExecutionEvent{ExecutionID: dummyID, ClusterID: clusterDummyID}
 	err := suite.runnerService.Execute(execution)
 
 	suite.EqualError(err, expectedError.Error())
@@ -190,24 +196,20 @@ func (suite *RunnerTestCase) Test_NewAnsibleCheckRunner() {
 	host1ID := uuid.New()
 	host2ID := uuid.New()
 	executionEvent := &ExecutionEvent{
-		ID: executionID,
-		Clusters: []*Cluster{
-			&Cluster{
-				ID:       clusterID,
-				Provider: "azure",
-				Checks:   []string{"check1", "check2"},
-				Hosts: []*Host{
-					&Host{
-						ID:      host1ID,
-						Address: "192.168.10.1",
-						User:    "user1",
-					},
-					&Host{
-						ID:      host2ID,
-						Address: "192.168.10.2",
-						User:    "user2",
-					},
-				},
+		ExecutionID: executionID,
+		ClusterID:   clusterID,
+		Provider:    "azure",
+		Checks:      []string{"check1", "check2"},
+		Hosts: []*Host{
+			&Host{
+				HostID:  host1ID,
+				Address: "192.168.10.1",
+				User:    "user1",
+			},
+			&Host{
+				HostID:  host2ID,
+				Address: "192.168.10.2",
+				User:    "user2",
 			},
 		},
 	}

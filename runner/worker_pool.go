@@ -31,7 +31,7 @@ func (e *ExecutionWorkerPool) Run(ctx context.Context) {
 		select {
 		case execution := <-channel:
 			if err := sem.Acquire(ctx, 1); err != nil {
-				log.Debugf("Discarding execution: %d, shutting down already.", execution.ID)
+				log.Debugf("Discarding execution: %d, shutting down already.", execution.ExecutionID)
 				break
 			}
 

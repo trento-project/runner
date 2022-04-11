@@ -49,7 +49,7 @@ func (c *callbacksClient) Callback(executionID uuid.UUID, event string, payload 
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode != http.StatusAccepted {
 		return fmt.Errorf(
 			"something wrong happened while sending the callback data. Status: %d, Execution: %s, Event: %s",
 			resp.StatusCode, executionID, event)

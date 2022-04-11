@@ -63,32 +63,29 @@ func CreateInventory(destination string, content *InventoryContent) error {
 func NewClusterInventoryContent(e *ExecutionEvent) (*InventoryContent, error) {
 	content := &InventoryContent{}
 
-	for _, cluster := range e.Clusters {
-		nodes := []*Node{}
+	nodes := []*Node{}
 
-		jsonChecks, err := json.Marshal(cluster.Checks)
-		if err != nil {
-			log.Errorf("error marshalling the cluster %s selected checks: %s", cluster.ID.String(), err)
-			continue
-		}
-
-		for _, host := range cluster.Hosts {
-			node := &Node{
-				Name:        host.ID.String(),
-				AnsibleHost: host.Address,
-				AnsibleUser: host.User,
-				Variables:   make(map[string]interface{}),
-			}
-
-			node.Variables[clusterSelectedChecks] = string(jsonChecks)
-			node.Variables[provider] = cluster.Provider
-
-			nodes = append(nodes, node)
-		}
-		group := &Group{Name: cluster.ID.String(), Nodes: nodes}
-
-		content.Groups = append(content.Groups, group)
+	jsonChecks, err := json.Marshal(e.Checks)
+	if err != nil {
+		log.Errorf("error marshalling the cluster %s selected checks: %s", e.ClusterID.String(), err)
 	}
+
+	for _, host := range e.Hosts {
+		node := &Node{
+			Name:        host.HostID.String(),
+			AnsibleHost: host.Address,
+			AnsibleUser: host.User,
+			Variables:   make(map[string]interface{}),
+		}
+
+		node.Variables[clusterSelectedChecks] = string(jsonChecks)
+		node.Variables[provider] = e.Provider
+
+		nodes = append(nodes, node)
+	}
+	group := &Group{Name: e.ClusterID.String(), Nodes: nodes}
+
+	content.Groups = append(content.Groups, group)
 
 	return content, nil
 }
