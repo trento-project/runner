@@ -20,7 +20,7 @@ func TestWorkerPoolTestCase(t *testing.T) {
 
 func (suite *WorkerPoolTestCase) Test_Run() {
 	channel := make(chan *ExecutionEvent)
-	execution := &ExecutionEvent{ID: uuid.New()}
+	execution := &ExecutionEvent{ExecutionID: uuid.New()}
 
 	var wg sync.WaitGroup
 	wg.Add(2)

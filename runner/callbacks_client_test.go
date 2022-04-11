@@ -46,7 +46,7 @@ func (suite *CallbacksTestSuite) Test_Callback() {
 
 		suite.Equal(req.URL.String(), "http://192.168.1.1:8000/api/runner/callbacks")
 		return &http.Response{
-			StatusCode: 200,
+			StatusCode: 202,
 		}
 	})
 

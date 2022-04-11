@@ -108,15 +108,17 @@ func (c *runnerService) ScheduleExecution(e *ExecutionEvent) error {
 	}
 
 	c.workerPoolChannel <- e
-	log.Infof("Scheduled event: %s", e.ID.String())
+	log.Infof("Scheduled event: %s", e.ExecutionID.String())
 	return nil
 }
 
 func (c *runnerService) Execute(e *ExecutionEvent) error {
-	log.Infof("Executing event: %s", e.ID.String())
-	if err := c.callbacksClient.Callback(e.ID, executionStartedEvent, nil); err != nil {
+	log.Infof("Executing event: %s on cluster: %s", e.ExecutionID.String(), e.ClusterID.String())
+
+	executionStartedPayload := map[string]string{"cluster_id": e.ClusterID.String()}
+	if err := c.callbacksClient.Callback(e.ExecutionID, executionStartedEvent, executionStartedPayload); err != nil {
 		log.Errorf(
-			"Error running callback. Execution ID: %s, Event: %s. Err: %s", e.ID.String(), executionStartedEvent, err)
+			"Error running callback. Execution ID: %s, Event: %s. Err: %s", e.ExecutionID.String(), executionStartedEvent, err)
 		return err
 	}
 
@@ -213,7 +215,7 @@ func NewAnsibleCheckRunner(config *Config, executionEvent *ExecutionEvent) (*Ans
 	configFile := path.Join(config.AnsibleFolder, AnsibleConfigFile)
 	ansibleRunner.SetConfigFile(configFile)
 	ansibleRunner.SetTrentoCallbacksUrl(config.CallbacksUrl)
-	ansibleRunner.SetTrentoExecutionID(executionEvent.ID.String())
+	ansibleRunner.SetTrentoExecutionID(executionEvent.ExecutionID.String())
 
 	inventoryContent, err := NewClusterInventoryContent(executionEvent)
 	if err != nil {
@@ -222,7 +224,7 @@ func NewAnsibleCheckRunner(config *Config, executionEvent *ExecutionEvent) (*Ans
 	}
 
 	inventoryFile := path.Join(
-		config.AnsibleFolder, fmt.Sprintf(AnsibleInventories, executionEvent.ID.String()))
+		config.AnsibleFolder, fmt.Sprintf(AnsibleInventories, executionEvent.ExecutionID.String()))
 
 	if err := CreateInventory(inventoryFile, inventoryContent); err != nil {
 		log.Errorf("Error creating the inventory file: %s", err)

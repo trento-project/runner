@@ -92,49 +92,25 @@ func (suite *InventoryTestSuite) Test_CreateInventory() {
 }
 
 func (suite *InventoryTestSuite) Test_NewClusterInventoryContent() {
-	cluster1 := uuid.New()
-	cluster2 := uuid.New()
+	cluster := uuid.New()
 	host1 := uuid.New()
 	host2 := uuid.New()
-	host3 := uuid.New()
-	host4 := uuid.New()
 
 	executionEvent := &ExecutionEvent{
-		ID: uuid.New(),
-		Clusters: []*Cluster{
-			&Cluster{
-				ID:       cluster1,
-				Provider: "azure",
-				Checks:   []string{"check1", "check2"},
-				Hosts: []*Host{
-					&Host{
-						ID:      host1,
-						Address: "192.168.10.1",
-						User:    "user1",
-					},
-					&Host{
-						ID:      host2,
-						Address: "192.168.10.2",
-						User:    "user2",
-					},
-				},
+		ExecutionID: uuid.New(),
+		ClusterID:   cluster,
+		Provider:    "azure",
+		Checks:      []string{"check1", "check2"},
+		Hosts: []*Host{
+			&Host{
+				HostID:  host1,
+				Address: "192.168.10.1",
+				User:    "user1",
 			},
-			&Cluster{
-				ID:       cluster2,
-				Provider: "azure",
-				Checks:   []string{"check3", "check4"},
-				Hosts: []*Host{
-					&Host{
-						ID:      host3,
-						Address: "192.168.10.3",
-						User:    "user3",
-					},
-					&Host{
-						ID:      host4,
-						Address: "192.168.10.4",
-						User:    "user4",
-					},
-				},
+			&Host{
+				HostID:  host2,
+				Address: "192.168.10.2",
+				User:    "user2",
 			},
 		},
 	}
@@ -144,7 +120,7 @@ func (suite *InventoryTestSuite) Test_NewClusterInventoryContent() {
 	expectedContent := &InventoryContent{
 		Groups: []*Group{
 			&Group{
-				Name: cluster1.String(),
+				Name: cluster.String(),
 				Nodes: []*Node{
 					&Node{
 						Name: host1.String(),
@@ -163,29 +139,6 @@ func (suite *InventoryTestSuite) Test_NewClusterInventoryContent() {
 						},
 						AnsibleHost: "192.168.10.2",
 						AnsibleUser: "user2",
-					},
-				},
-			},
-			&Group{
-				Name: cluster2.String(),
-				Nodes: []*Node{
-					&Node{
-						Name: host3.String(),
-						Variables: map[string]interface{}{
-							"cluster_selected_checks": "[\"check3\",\"check4\"]",
-							"provider":                "azure",
-						},
-						AnsibleHost: "192.168.10.3",
-						AnsibleUser: "user3",
-					},
-					&Node{
-						Name: host4.String(),
-						Variables: map[string]interface{}{
-							"cluster_selected_checks": "[\"check3\",\"check4\"]",
-							"provider":                "azure",
-						},
-						AnsibleHost: "192.168.10.4",
-						AnsibleUser: "user4",
 					},
 				},
 			},

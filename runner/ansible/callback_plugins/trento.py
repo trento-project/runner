@@ -30,72 +30,57 @@ class ExecutionResults(object):
 
     Result example:
 
-    [
-      {
-        "cluster_id": "cluster1",
-        "hosts": [
-          {
-            "host_id": "host1",
-            "name": "host1",
-            "reachable": true,
-            "msg": "some message",
-            "results": [
-              {
-                "host_id": "host1",
-                "check: "check1",
-                "result": "passing",
-                "msg": "some message"
-              },
-              {
-                "host_id": "host2",
-                "check: "check1",
-                "result": "warning",
-                "msg": "some message"
-              }
-            ]
-          }
-        ]
-      }
-    ]
+    {
+      "cluster_id": "cluster1",
+      "hosts": [
+        {
+          "host_id": "host1",
+          "name": "host1",
+          "reachable": true,
+          "msg": "some message",
+          "results": [
+            {
+              "check_id: "check1",
+              "result": "passing",
+              "msg": "some message"
+            },
+            {
+              "check_id: "check1",
+              "result": "warning",
+              "msg": "some message"
+            }
+          ]
+        }
+      ]
+    }
     """
     def __init__(self):
         self._logger = logging.getLogger(__name__)
-        self.clusters = []
+        self.cluster = None
 
     def initialize_cluster(self, cluster_id):
         """
-        Initialize the group on the results dictionary
+        Initialize the cluster object
         """
-        cluster = [cluster for cluster in self.clusters if cluster.cluster_id == cluster_id]
-        if cluster:
-            self._logger.error("cluster with id %s already initialized", cluster_id)
-            return
+        self.cluster = Cluster(cluster_id)
 
-        self.clusters.append(Cluster(cluster_id))
-
-    def add_host(self, cluster_id, host_id, state, msg=""):
+    def add_host(self, host_id, state, msg=""):
         """
         Add the host state. Reachable or Unreachable
         """
-        for cluster in self.clusters:
-            if cluster.cluster_id == cluster_id:
-                cluster.add_host(host_id, state, msg)
-                break
+        self.cluster.add_host(host_id, state, msg)
 
-    def add_result(self, cluster_id, host_id, check_id, result, msg=""):
+    def add_result(self, host_id, check_id, result, msg=""):
         """
         Add check result
         """
-        for cluster in self.clusters:
-            if cluster.cluster_id == cluster_id:
-                cluster.add_result(host_id, check_id, result, msg)
-                break
+        self.cluster.add_result(host_id, check_id, result, msg)
 
     def to_dict(self):
         """
         Transform to dictionary
         """
-        return [cluster.to_dict() for cluster in self.clusters]
+        return self.cluster.to_dict()
 
 
 class Cluster(object):
@@ -224,6 +209,7 @@ class CallbackModule(CallbackBase):
         for _, host_data in play_vars["hostvars"].items():
             for group in host_data["group_names"]:
                 self.execution_results.initialize_cluster(group)
+                break
 
     def v2_runner_on_ok(self, result):
         """
@@ -240,9 +226,8 @@ class CallbackModule(CallbackBase):
         task_vars = self._all_vars(host=result._host, task=result._task)
 
         test_result = result._task_fields["args"]["test_result"]
-        for group in task_vars["group_names"]:
-            self.execution_results.add_host(group, host, True)
-            self.execution_results.add_result(group, host, task_vars[CHECK_ID], test_result)
+        self.execution_results.add_host(host, True)
+        self.execution_results.add_result(host, task_vars[CHECK_ID], test_result)
 
     def v2_runner_on_failed(self, result, ignore_errors):
         """
@@ -255,10 +240,8 @@ class CallbackModule(CallbackBase):
             return
 
         msg = result._check_key("msg")
-
-        for group in task_vars["group_names"]:
-            self.execution_results.add_host(group, host, True)
-            self.execution_results.add_result(group, host, task_vars[CHECK_ID], "warning", msg)
+        self.execution_results.add_host(host, True)
+        self.execution_results.add_result(host, task_vars[CHECK_ID], "warning", msg)
 
     def v2_runner_on_skipped(self, result):
         """
@@ -272,11 +255,8 @@ class CallbackModule(CallbackBase):
         On task Unreachable
         """
         host = result._host.get_name()
-        task_vars = self._all_vars(host=result._host, task=result._task)
         msg = result._check_key("msg")
-
-        for group in task_vars["group_names"]:
-            self.execution_results.add_host(group, host, False, msg)
+        self.execution_results.add_host(host, False, msg)
 
     def v2_playbook_on_stats(self, _stats):
         """
@@ -334,7 +314,6 @@ class CallbackModule(CallbackBase):
         """
         Store skipped checks
         """
-        task_vars = self._all_vars(host=result._host, task=result._task)
         host = result._host.get_name()
 
         for check_result in result._result["results"]:
@@ -346,9 +325,8 @@ class CallbackModule(CallbackBase):
                     data = yaml.load(file_ptr, Loader=yaml.Loader)
                     check_id = data[CHECK_ID]
 
-                for group in task_vars["group_names"]:
-                    self.execution_results.add_host(group, host, True)
-                    self.execution_results.add_result(group, host, check_id, "skipped")
+                self.execution_results.add_host(host, True)
+                self.execution_results.add_result(host, check_id, "skipped")
 
     def _post_results(self):
         """
