@@ -4,16 +4,25 @@
   shell: |
     DEF_WDTIMEOUT={{ expected[name] }}
     result_wdtimeout=${DEF_WDTIMEOUT}
-    sbdarray=$(grep -E '^SBD_DEVICE=' /etc/sysconfig/sbd  | grep -oP 'SBD_DEVICE=\K[^.]+' | sed 's/\"//g')
-    IFS=';' sbdarray=( $sbdarray )
+
+    if [ -f /etc/sysconfig/sbd ]; then
+      source /etc/sysconfig/sbd
+    else
+      exit 1
+    fi
+
+    IFS=';' sbdarray=( $SBD_DEVICE )
+
     for i in "${sbdarray[@]}"
     do
-      wdtimeout=$(/usr/sbin/sbd -d ${i} dump | grep -oP 'Timeout \(watchdog\)  *: \K\d+')|| echo ""
+      device="${i//[[:space:]]/}"
+      wdtimeout=$(/usr/sbin/sbd -d ${device} dump | grep -oP 'Timeout \(watchdog\)  *: \K\d+')|| echo ""
       if [[ "${wdtimeout}" -ne "${DEF_WDTIMEOUT}" ]]; then
         result_wdtimeout="${wdtimeout}"
       fi
     done
     echo "${result_wdtimeout}"
+
   check_mode: false
   register: config_updated
   changed_when: config_updated.stdout != expected[name]
@@ -26,3 +35,4 @@
     - ansible_check_mode
   vars:
     status: "{{ config_updated is not changed }}"
+
