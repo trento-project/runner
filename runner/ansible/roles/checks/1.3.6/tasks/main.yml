@@ -2,21 +2,32 @@
 
 - name: "{{ name }}.check"
   shell: |
-    DEF_MSGWAIT={{ expected[name] }}
-    result_msgwait=${DEF_MSGWAIT}
-    sbdarray=$(grep -E '^SBD_DEVICE=' /etc/sysconfig/sbd  | grep -oP 'SBD_DEVICE=\K[^.]+' | sed 's/\"//g')
-    IFS=';' sbdarray=( $sbdarray )
+    if [ -f /etc/sysconfig/sbd ]; then
+      source /etc/sysconfig/sbd
+    else
+      exit 1
+    fi
+
+    IFS=';' sbdarray=( $SBD_DEVICE )
+
     for i in "${sbdarray[@]}"
-    do
-      msgwait=$(/usr/sbin/sbd -d ${i} dump | grep -oP 'Timeout \(msgwait\)  *: \K\d+')|| echo ""
-      if [[ "${msgwait}" -ne "${DEF_MSGWAIT}" ]]; then
-        result_msgwait="${msgwait}"
-      fi
-    done
-    echo $result_msgwait
+      do
+        device="${i//[[:space:]]/}"
+        msgwait=$(/usr/sbin/sbd -d ${device} dump | grep -oP 'Timeout \(msgwait\)  *: \K\d+')|| echo ""
+        watchdog=$(/usr/sbin/sbd -d ${device} dump | grep -oP 'Timeout \(watchdog\)  *: \K\d+')|| echo ""
+        declare -i msgwait
+        declare -i watchdog
+        let watchdog*=2
+        if [ $msgwait -lt $watchdog ]; then
+          exit 1
+        fi
+      done
+    exit 0
+
   register: config_updated
   check_mode: false
-  changed_when: config_updated.stdout != expected[name]
+  changed_when: config_updated.rc != 0
+  failed_when: config_updated.rc > 1
 
 - block:
     - name: Post results
@@ -26,3 +37,6 @@
     - ansible_check_mode
   vars:
     status: "{{ config_updated is not changed }}"
+
+
+
