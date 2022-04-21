@@ -2,8 +2,36 @@
 
 - name: "{{ name }}.check"
   shell: |
-    INTERFACE_COUNT=$(cat /etc/corosync/corosync.conf | grep interface | wc -l)
-    [[ $INTERFACE_COUNT -ge "2" ]] && exit 0
+    RING_CHECK=$(
+        perl  -n -e '
+        my $cont;
+        while (<>) {
+            # filter out lines beginnig with hash sign (optionally after whitespace)
+            if (! /^\W*#/ ) {
+                $cont .= $_;
+            }
+        }
+        my $node=0;
+        # search for all (sub)directives node { ... }
+        while ($cont =~ m/\bnode\W*{[^}]*}/gs) {
+            $node++;
+            my $nodeStr=$&;
+            # filter for key value pairs for ring adresses for ring0 and ring1
+            if ($nodeStr =~ /(ring0_addr:\W*(.*))\W*(ring1_addr:\W*(.*))?\W*/g) {
+                if ( $2 ne "" and $4 ne "" ) {
+                    # report a "2", if both attributes are set with values
+                    print "2"
+                } elsif ( $2 ne "" or $4 ne "" ) {
+                    print "1"
+                } else {
+                    print "0"
+                }
+            }
+        }
+        printf "\n"' < /etc/corosync/corosync.conf
+    )
+    #echo "RING_CHECK=$RING_CHECK" > /tmp/test119
+    [[ "$RING_CHECK" == "{{ expected[name] }}" ]] && exit 0
     exit 1
   check_mode: false
   register: config_updated
