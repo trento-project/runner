@@ -9,6 +9,7 @@ expected_core:
   "1.1.6": "udpu"
   "1.1.7": "2"
   "1.1.8": "1"
+  "1.1.9": "22" # 2 nodes, 2 rings defined
   "1.2.1": "true"
   "1.2.2.sbd": "150"
   "1.2.2.fence_azure_arm": "" # doesn't apply
