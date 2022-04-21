@@ -3,9 +3,10 @@
 - name: "{{ name }}.check"
   lineinfile:
     path: /etc/corosync/corosync.conf
-    regexp: '^(\s+){{ key_name }}:'
-    line: "\t{{ key_name }}: {{ expected[name] }}"
-    insertafter: 'quorum {'
+    regexp: '^(\s*){{ key_name }}:(\s*)\S*(\s)*$'
+    line: '\g<1>{{ key_name }}:\g<2>{{ expected[name] }}\g<3>'
+    backrefs: yes
+    #insertafter: 'quorum {'
   register: config_updated
   when: ansible_check_mode
 
