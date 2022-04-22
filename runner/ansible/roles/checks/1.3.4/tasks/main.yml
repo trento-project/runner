@@ -3,6 +3,7 @@
 - name: "{{ name }}.check"
   shell: |
     #!/bin/bash
+    [ '{{ expected[name] }}' == '@@skip@@' ] && { echo '@@skip@@';  exit 0; }
     file="/etc/sysconfig/sbd"
     source "$file" || exit 1
     COUNT=$(perl -e '

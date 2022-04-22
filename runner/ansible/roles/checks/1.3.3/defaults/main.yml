@@ -5,10 +5,13 @@ group: SBD
 labels: generic
 description: |
   SBD service is enabled
+
+  Not applicable to GCP, AWS
 remediation: |
   ## Abstract
   If not enabled, SBD service will not start automatically after reboots, affecting the correct cluster startup.
 
+  The SBD is not used in GCP or AWS environments.
   ## Remediation
   To enable the service, run:
   ```

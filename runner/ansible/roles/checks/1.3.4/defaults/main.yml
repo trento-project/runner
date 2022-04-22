@@ -5,9 +5,13 @@ group: SBD
 labels: generic
 description: |
   Multiple SBD devices are configured
+
+  Not applicable to GCP, AWS
 remediation: |
   ## Abstract
   It is recommended to configure 3 SBD devices for production environments.
+
+  The SBD is not used in GCP or AWS environments.
 
   ## References
   Azure:
