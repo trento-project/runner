@@ -146,7 +146,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=docker,dest=/tmp/trento-runner.tar
       - name: Upload artifact
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: trento-runner
           path: /tmp/trento-runner.tar
@@ -192,7 +192,7 @@ jobs:
         run: |
           set -x
           find ./build -maxdepth 1 -mindepth 1 -type d -exec sh -c 'tar -zcf build/trento-runner-$(basename {}).tgz -C {} trento-runner' \;
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: trento-runner-binaries
           path: |
