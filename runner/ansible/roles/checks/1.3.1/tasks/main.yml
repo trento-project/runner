@@ -4,6 +4,7 @@
   check_mode: false
   shell: |
       #!/bin/bash
+      [ '{{ expected[name] }}' == '@@skip@@' ] && exit 0
       source /etc/sysconfig/sbd || exit 1
       [ "${SBD_PACEMAKER}" == '{{ expected[name] }}' ] || exit 1
       exit 0

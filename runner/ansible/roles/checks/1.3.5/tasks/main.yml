@@ -2,6 +2,7 @@
 
 - name: "{{ name }}.check"
   shell: |
+    [ '{{ expected[name] }}' == '@@skip@@' ] && { echo '@@skip@@';  exit 0; }
     DEF_WDTIMEOUT={{ expected[name] }}
     result_wdtimeout=${DEF_WDTIMEOUT}
 

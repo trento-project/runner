@@ -5,9 +5,13 @@ group: SBD
 labels: generic
 description: |
   SBD watchdog timeout is set to `{{ expected[name] }}`
+
+  Not applicable to GCP, AWS
 remediation: |
   ## Remediation
   Make sure you configure your SBD Watchdog Timeout to `{{ expected[name] }}` seconds as recommended on the best practices.
+
+  The SBD is not used in GCP or AWS environments.
 
   ## References
   Azure:

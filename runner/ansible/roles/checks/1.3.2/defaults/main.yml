@@ -5,11 +5,14 @@ group: SBD
 labels: generic
 description: |
   `SBD_STARTMODE` is set to `always`
+
+  Not applicable for GCP, AWS
 remediation: |
   ## Abstract
   If not set to always, SBD will not automatically start if the node was previously fenced as it will expect the cluster in a clean state.
   **IMPORTANT**: Always verify these steps in a testing environment before doing so in production ones!
 
+  The SBD is not used in GCP or AWS environments.
   ## Remediation
   Run the following commands in order:
 

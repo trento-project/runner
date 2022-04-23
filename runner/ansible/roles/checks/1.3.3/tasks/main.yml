@@ -7,6 +7,7 @@
   register: config_updated
   when:
     - ansible_check_mode
+    - expected[name]!="@@skip@@"
 
 - block:
     - name: Post results
@@ -14,5 +15,6 @@
         name: post-results
   when:
     - ansible_check_mode
+    - expected[name]!="@@skip@@"
   vars:
     status: "{{ config_updated is not changed }}"

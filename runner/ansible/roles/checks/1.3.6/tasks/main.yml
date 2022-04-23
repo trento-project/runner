@@ -2,6 +2,7 @@
 
 - name: "{{ name }}.check"
   shell: |
+    [ '{{ expected[name] }}' == '@@skip@@' ] && { echo '@@skip@@';  exit 0; }
     if [ -f /etc/sysconfig/sbd ]; then
       source /etc/sysconfig/sbd
     else
