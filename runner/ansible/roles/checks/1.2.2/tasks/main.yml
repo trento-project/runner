@@ -2,11 +2,14 @@
 
 - name: "{{ name }}.check"
   shell: |
-   timeout=$(crm_attribute -t crm_config -G -n stonith-timeout --quiet)
+   timeout=$(crm_attribute -t crm_config -G -n stonith-timeout --quiet | sed -e 's/s$//')
+   #
+   # for aws and gcp we might need additional expected vars (name + fence_aws_...)
+   #
    if [[cibadmin -Q --xpath "//primitive[@type='fence_azure_arm']/@type" > /dev/null 2>&1 ]]; then
-     exit $([[ "${timeout}" =~ {{ expected[name + '.fence_azure_arm'] }}s?$ ]])
+     exit $([[ "${timeout}" -eq {{ expected[name + '.fence_azure_arm'] }} ]])
    else
-     exit $([[ "${timeout}" =~ {{ expected[name + '.sbd'] }}s?$ ]])
+     exit $([[ "${timeout}" -ge {{ expected[name + '.sbd'] }} ]])
    fi
   check_mode: false
   register: config_updated
