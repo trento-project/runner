@@ -16,7 +16,6 @@ type Config struct {
 	Host          string
 	Port          int
 	CallbacksUrl  string
-	Interval      time.Duration
 	AnsibleFolder string
 }
 

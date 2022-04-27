@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/suite"
@@ -49,7 +48,6 @@ func (suite *RunnerCmdTestSuite) TearDownTest() {
 		Host:          "localhost",
 		Port:          5678,
 		CallbacksUrl:  "http://192.168.1.1:8000/api/runner/callbacks",
-		Interval:      1 * time.Minute,
 		AnsibleFolder: "path/to/ansible",
 	}
 	config := LoadConfig()
@@ -63,7 +61,6 @@ func (suite *RunnerCmdTestSuite) TestConfigFromFlags() {
 		"--host=localhost",
 		"--port=5678",
 		"--callbacks-url=http://192.168.1.1:8000/api/runner/callbacks",
-		"--interval=1",
 		"--ansible-folder=path/to/ansible",
 	})
 }
@@ -72,7 +69,6 @@ func (suite *RunnerCmdTestSuite) TestConfigFromEnv() {
 	os.Setenv("TRENTO_RUNNER_HOST", "localhost")
 	os.Setenv("TRENTO_RUNNER_PORT", "5678")
 	os.Setenv("TRENTO_RUNNER_CALLBACKS_URL", "http://192.168.1.1:8000/api/runner/callbacks")
-	os.Setenv("TRENTO_RUNNER_INTERVAL", "1")
 	os.Setenv("TRENTO_RUNNER_ANSIBLE_FOLDER", "path/to/ansible")
 }
 
