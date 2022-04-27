@@ -55,7 +55,6 @@ func addStartCmd(runnerCmd *cobra.Command) {
 	var host string
 	var port int
 	var callbacksUrl string
-	var interval int
 	var ansibleFolder string
 
 	startCmd := &cobra.Command{
@@ -68,7 +67,6 @@ func addStartCmd(runnerCmd *cobra.Command) {
 	startCmd.Flags().IntVar(&port, "port", 8080, "Trento Runner API port")
 	startCmd.Flags().StringVar(&callbacksUrl, "callbacks-url", "", "Trento web server runner callbacks API url")
 	startCmd.MarkFlagRequired("callbacks-url")
-	startCmd.Flags().IntVarP(&interval, "interval", "i", 5, "Interval in minutes to run the checks")
 	startCmd.Flags().StringVar(&ansibleFolder, "ansible-folder", "/tmp/trento", "Folder where the ansible file structure will be created")
 
 	runnerCmd.AddCommand(startCmd)
