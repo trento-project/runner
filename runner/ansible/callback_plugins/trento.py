@@ -138,10 +138,12 @@ class Host(object):
         """
         Add check result
         """
+        # Check if a result already exists
+        # Due how ansible callbacks system works, we might get same check results twice
+        # where the 2nd result is false, as it gives the results of `set_test_result` task
+        # when the check has failed due abnormal behaviours
         for result_item in self.results:
             if result_item.check_id == check_id:
-                result_item.result = result
-                result_item.msg = msg
                 break
         else:
             self.results.append(CheckResult(check_id, result, msg))
@@ -241,7 +243,7 @@ class CallbackModule(CallbackBase):
 
         msg = result._check_key("msg")
         self.execution_results.add_host(host, True)
-        self.execution_results.add_result(host, task_vars[CHECK_ID], "warning", msg)
+        self.execution_results.add_result(host, task_vars[CHECK_ID], "critical", msg)
 
     def v2_runner_on_skipped(self, result):
         """

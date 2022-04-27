@@ -7,7 +7,7 @@ ADD . /build
 RUN zypper -n in git-core && make build
 
 FROM registry.suse.com/bci/python:3.9 AS trento-runner
-RUN /usr/bin/python3 -m venv /venv \
+RUN /usr/local/bin/python3 -m venv /venv \
     && /venv/bin/pip install 'ansible~=4.6.0' 'requests~=2.26.0' 'rpm==0.0.2' 'pyparsing~=2.0' \
     && zypper -n ref && zypper -n in --no-recommends openssh \
     && zypper -n clean
