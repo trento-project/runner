@@ -1,16 +1,17 @@
 ---
 
 - name: "{{ name }}.check"
-  check_mode: false
   shell: |
       #!/bin/bash
       [ '{{ expected[name] }}' == '@@skip@@' ] && exit 0
       source /etc/sysconfig/sbd || exit 1
       [ "${SBD_PACEMAKER}" == '{{ expected[name] }}' ] || exit 1
       exit 0
+
   register: config_updated
-  when:
-    - ansible_check_mode
+  check_mode: false
+  changed_when: config_updated.rc != 0
+  failed_when: config_updated.rc > 1
 
 - block:
     - name: Post results
