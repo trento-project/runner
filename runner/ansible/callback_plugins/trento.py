@@ -243,7 +243,7 @@ class CallbackModule(CallbackBase):
 
         msg = result._check_key("msg")
         self.execution_results.add_host(host, True)
-        self.execution_results.add_result(host, task_vars[CHECK_ID], "warning", msg)
+        self.execution_results.add_result(host, task_vars[CHECK_ID], "critical", msg)
 
     def v2_runner_on_skipped(self, result):
         """
