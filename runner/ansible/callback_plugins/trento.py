@@ -138,10 +138,12 @@ class Host(object):
         """
         Add check result
         """
+        # Check if a result already exists
+        # Due how ansible callbacks system works, we might get same check results twice
+        # where the 2nd result is false, as it gives the results of `set_test_result` task
+        # when the check has failed due abnormal behaviours
         for result_item in self.results:
             if result_item.check_id == check_id:
-                result_item.result = result
-                result_item.msg = msg
                 break
         else:
             self.results.append(CheckResult(check_id, result, msg))
