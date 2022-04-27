@@ -1,15 +1,34 @@
 ---
 
 - name: "{{ name }}.check"
-  lineinfile:
-    path: /etc/corosync/corosync.conf
-    regexp: '^(\s*){{ key_name }}:(\s*)\S*(\s)*$'
-    line: '\g<1>{{ key_name }}:\g<2>{{ expected[name] }}\g<3>'
-    backrefs: yes
-    #insertafter: 'totem {'
+  shell: |
+    #!/usr/bin/bash
+    # test fails, if corosync.conf file is even missing
+    [ -f /etc/corosync/corosync.conf ] || exit 1
+    TOKEN=$(
+        perl  -n -e '
+        while (<>) {
+            # filter out lines beginnig with hash sign (optionally after whitespace)
+            if (! /^\W*#/ ) {
+                $cont .= $_;
+            }
+        }
+        # search for all directives totem { ... }
+        while ($cont =~ m/\btotem\W*{[^}]*}/gs) {
+            my $totemStr=$&;
+            # filter for key value pairs for token
+            if ($totemStr =~ /token:\s*(\S*)\s*/g) {         
+                print "$1";
+            }
+        }
+        printf "\n"' < /etc/corosync/corosync.conf
+    )
+    [[ "$TOKEN" == "{{ expected[name] }}" ]] && exit 0
+    exit 1
+  check_mode: false
   register: config_updated
-  when:
-    - ansible_check_mode
+  changed_when: config_updated.rc != 0
+  failed_when: config_updated.rc > 1
 
 - block:
     - name: Post results
