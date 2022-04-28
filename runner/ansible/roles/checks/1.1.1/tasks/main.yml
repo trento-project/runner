@@ -6,15 +6,15 @@
     # test fails, if corosync.conf file is even missing
     [ -f /etc/corosync/corosync.conf ] || exit 1
     TOKEN=$(
-        perl  -n -e '
+        perl  -e '
         while (<>) {
             # filter out lines beginnig with hash sign (optionally after whitespace)
-            if (! /^\W*#/ ) {
+            if (! /^\s*#/ ) {
                 $cont .= $_;
             }
         }
         # search for all directives totem { ... }
-        while ($cont =~ m/\btotem\W*{[^}]*}/gs) {
+        while ($cont =~ m/\btotem\s*{[^}]*}/gs) {
             my $totemStr=$&;
             # filter for key value pairs for token
             if ($totemStr =~ /token:\s*(\S*)\s*/g) {         
