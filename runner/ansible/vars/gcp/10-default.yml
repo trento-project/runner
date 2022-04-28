@@ -9,7 +9,7 @@ expected_core:
   "1.1.6": "udpu"
   "1.1.7": "2"
   "1.1.8": "1"
-  "1.1.9": "22" # 2 nodes, 2 rings defined
+  "1.1.9": "11" # 2 nodes, 1 ring
   "1.2.1": "true"
   "1.3.1": "@@skip@@" # doesn't apply to gcp
   "1.3.2": "@@skip@@" # doesn't apply to gcp
