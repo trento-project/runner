@@ -2,6 +2,7 @@ package runner
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"path"
 	"text/template"
@@ -78,7 +79,7 @@ func NewClusterInventoryContent(e *ExecutionEvent) (*InventoryContent, error) {
 			Variables:   make(map[string]interface{}),
 		}
 
-		node.Variables[clusterSelectedChecks] = string(jsonChecks)
+		node.Variables[clusterSelectedChecks] = fmt.Sprintf("'%s'", string(jsonChecks))
 		node.Variables[provider] = e.Provider
 
 		nodes = append(nodes, node)

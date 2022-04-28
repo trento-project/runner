@@ -232,8 +232,8 @@ func (suite *RunnerTestCase) Test_NewAnsibleCheckRunner() {
 	inventoryContent, err := ioutil.ReadFile(inventoryFile)
 	expectedFile := "\n" +
 		"[%s]\n" +
-		"%s ansible_host=192.168.10.1 ansible_user=user1 cluster_selected_checks=[\"check1\",\"check2\"] provider=azure \n" +
-		"%s ansible_host=192.168.10.2 ansible_user=user2 cluster_selected_checks=[\"check1\",\"check2\"] provider=azure \n"
+		"%s ansible_host=192.168.10.1 ansible_user=user1 cluster_selected_checks='[\"check1\",\"check2\"]' provider=azure \n" +
+		"%s ansible_host=192.168.10.2 ansible_user=user2 cluster_selected_checks='[\"check1\",\"check2\"]' provider=azure \n"
 
 	suite.NoError(err)
 	suite.Equal(expectedChecksRunner, a)
