@@ -2,6 +2,7 @@
 
 - name: "{{ name }}.check"
   shell: |
+    #!/bin/bash
     [ '{{ expected[name] }}' == '@@skip@@' ] && { echo '@@skip@@';  exit 0; }
     if [ -f /etc/sysconfig/sbd ]; then
       source /etc/sysconfig/sbd
@@ -38,6 +39,3 @@
     - ansible_check_mode
   vars:
     status: "{{ config_updated is not changed }}"
-
-
-
