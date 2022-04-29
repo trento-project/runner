@@ -230,7 +230,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v3
         with:
-          name: trento-binaries
+          name: trento-runner-binaries
       - uses: AButler/upload-release-assets@v2.0
         with:
           files: "trento-runner-*"
