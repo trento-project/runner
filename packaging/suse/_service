@@ -1,0 +1,20 @@
+<services>
+  <service mode="buildtime" name="docker_label_helper"/>
+  <service mode="buildtime" name="kiwi_metainfo_helper"/>
+  <service name="tar_scm" mode="disabled">
+      <param name="url">https://github.com/%%REPOSITORY%%.git</param>
+      <param name="scm">git</param>
+      <param name="revision">%%REVISION%%</param>
+      <param name="exclude">.git</param>
+      <param name="exclude">.github</param>
+      <param name="versionformat">%%VERSION%%</param>
+      <param name="filename">runner</param>
+  </service>
+  <service name="recompress" mode="disabled">
+      <param name="file">*.tar</param>
+      <param name="compression">gz</param>
+  </service>
+  <service name="go_modules" mode="disabled">
+      <param name="archive">runner-%%VERSION%%.tar.gz</param>
+  </service>
+</services>
