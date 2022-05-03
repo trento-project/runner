@@ -202,7 +202,7 @@ jobs:
             build/trento-runner-s390x.tgz
 
   release-rolling:
-    needs: [test-binary, test-checks, test-python-callback]
+    needs: [test-binary, test-checks, test-python-callback, build-static-binary]
     if: (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-20.04
     steps:
