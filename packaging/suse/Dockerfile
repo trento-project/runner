@@ -13,7 +13,7 @@ PREFIXEDLABEL org.opencontainers.image.created="%BUILDTIME%"
 
 # Workaround for https://github.com/openSUSE/obs-build/issues/487
 RUN zypper --non-interactive in sles-release
-RUN zypper --non-interactive in tar gzip make go
+RUN zypper --non-interactive in tar gzip make go1.16
 
 COPY runner-%%VERSION%%.tar.gz premium-checks.tar.gz* /build/
 COPY vendor.tar.gz /build/
