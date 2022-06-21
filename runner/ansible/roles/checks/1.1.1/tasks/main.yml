@@ -17,7 +17,7 @@
         while ($cont =~ m/\btotem\s*{[^}]*}/gs) {
             my $totemStr=$&;
             # filter for key value pairs for token
-            if ($totemStr =~ /token:\s*(\S*)\s*/g) {         
+            if ($totemStr =~ /token\s*:\s*(\S*)\s*/g) {         
                 print "$1";
             }
         }
