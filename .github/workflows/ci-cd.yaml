@@ -263,6 +263,14 @@ jobs:
           semver_only: true
           initial_version: 0.0.1
 
+      - name: Configure OSC
+        # OSC credentials must be configured beforehand as the HOME variables cannot be changed from /github/home
+        # that is used to run osc commands
+        run: |
+          /scripts/init_osc_creds.sh
+          mkdir -p $HOME/.config/osc
+          cp /root/.config/osc/oscrc $HOME/.config/osc
+
       - name: Prepare .changes file
         # The .changes file is updated only in release creation. This current task should be improved
         # in order to add the current rolling release notes
@@ -282,21 +290,13 @@ jobs:
           sed -i 's~%%VERSION%%~'"${VERSION}"'~' $FOLDER/_service && \
           sed -i 's~%%VERSION%%~'"${VERSION}"'~' $FOLDER/Dockerfile
 
-      - name: Configure OSC
-        # OSC credentials must be configured beforehand as the HOME variables cannot be changed from /github/home
-        # that is used to run osc commands
-        run: |
-          /scripts/init_osc_creds.sh
-          mkdir -p $HOME/.config/osc
-          cp /root/.config/osc/oscrc $HOME/.config/osc
-
       - name: Commit on OBS
         run: |
           OBS_PACKAGE=$OBS_PROJECT/$PACKAGE_NAME
           osc checkout $OBS_PACKAGE -o $DEST_FOLDER
           cp -r packaging/suse/* $DEST_FOLDER
           cd $DEST_FOLDER
-          osc rm -f ./*.tar.*
+          osc rm -f ./runner*.tar.*
           osc service dr
           osc ar
           osc commit -m "New development version of $PACKAGE_NAME released"
