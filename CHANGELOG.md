@@ -1,5 +1,35 @@
 # Changelog
 
+## [1.0.1](https://github.com/trento-project/runner/tree/1.0.1) (2022-07-14)
+
+[Full Changelog](https://github.com/trento-project/runner/compare/1.0.0...1.0.1)
+
+### Added
+
+- Include suse container packaging [\#57](https://github.com/trento-project/runner/pull/57) (@arbulu89)
+
+### Fixed
+
+- added \s\* whitespace between "token" and ":" [\#78](https://github.com/trento-project/runner/pull/78) (@ksanjeet)
+- Fix inconsisten vendoring issue due the self replace [\#73](https://github.com/trento-project/runner/pull/73) (@arbulu89)
+- Fix corosync file regexp to be more robust [\#65](https://github.com/trento-project/runner/pull/65) (@arbulu89)
+- Add obs disk constraints to avoid out of space issue [\#63](https://github.com/trento-project/runner/pull/63) (@arbulu89)
+
+### Other Changes
+
+- Bump github.com/swaggo/swag from 1.8.2 to 1.8.3 [\#75](https://github.com/trento-project/runner/pull/75) (@dependabot[bot])
+- Bump actions/setup-python from 3 to 4 [\#71](https://github.com/trento-project/runner/pull/71) (@dependabot[bot])
+- Bump github.com/gin-gonic/gin from 1.7.7 to 1.8.1 [\#70](https://github.com/trento-project/runner/pull/70) (@dependabot[bot])
+- Bump github.com/stretchr/testify from 1.7.1 to 1.7.2 [\#69](https://github.com/trento-project/runner/pull/69) (@dependabot[bot])
+- Bump github.com/spf13/viper from 1.11.0 to 1.12.0 [\#67](https://github.com/trento-project/runner/pull/67) (@dependabot[bot])
+- Bump github.com/vektra/mockery/v2 from 2.12.1 to 2.12.3 [\#66](https://github.com/trento-project/runner/pull/66) (@dependabot[bot])
+- Bump github.com/swaggo/swag from 1.8.1 to 1.8.2 [\#64](https://github.com/trento-project/runner/pull/64) (@dependabot[bot])
+- Bump docker/login-action from 1.14.1 to 2 [\#61](https://github.com/trento-project/runner/pull/61) (@dependabot[bot])
+- Bump docker/metadata-action from 3.8.0 to 4.0.1 [\#60](https://github.com/trento-project/runner/pull/60) (@dependabot[bot])
+- Bump docker/setup-buildx-action from 1 to 2 [\#59](https://github.com/trento-project/runner/pull/59) (@dependabot[bot])
+- Bump docker/build-push-action from 2 to 3 [\#58](https://github.com/trento-project/runner/pull/58) (@dependabot[bot])
+- Restore binaries upload [\#56](https://github.com/trento-project/runner/pull/56) (@dottorblaster)
+
 ## [1.0.0](https://github.com/trento-project/runner/tree/1.0.0) (2022-04-29)
 
 [Full Changelog](https://github.com/trento-project/runner/compare/7da8894a9f0f423aaa9fcdd3ff20f07788e9b13c...1.0.0)
@@ -60,6 +90,3 @@
 - Remove duplicated ansible folder [\#4](https://github.com/trento-project/runner/pull/4) (@arbulu89)
 - Build checks catalog [\#3](https://github.com/trento-project/runner/pull/3) (@arbulu89)
 - Bump github.com/stretchr/testify from 1.7.0 to 1.7.1 [\#1](https://github.com/trento-project/runner/pull/1) (@dependabot[bot])
-
-
-
