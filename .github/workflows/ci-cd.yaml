@@ -286,12 +286,13 @@ jobs:
         run: |
           git config --global --add safe.directory /__w/runner/runner
           VERSION=$(./hack/get_version_from_git.sh)
-          # "+" character is not allowed in OBS dockerfile version strings
-          VERSION=${VERSION//[+]/-}
           sed -i 's~%%REVISION%%~${{ github.sha }}~' $FOLDER/_service && \
           sed -i 's~%%REPOSITORY%%~${{ github.repository }}~' $FOLDER/_service && \
           sed -i 's~%%VERSION%%~'"${VERSION}"'~' $FOLDER/_service && \
           sed -i 's~%%VERSION%%~'"${VERSION}"'~' $FOLDER/Dockerfile
+          # "+" character is not allowed in OBS dockerfile version strings
+          VERSION=${VERSION//[+]/-}
+          sed -i 's~%%OBS_VERSION%%~'"${VERSION}"'~' $FOLDER/Dockerfile
 
       - name: Commit on OBS
         run: |

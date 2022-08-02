@@ -1,6 +1,6 @@
 #!BuildTag: trento/trento-runner:latest
-#!BuildTag: trento/trento-runner:%%VERSION%%
-#!BuildTag: trento/trento-runner:%%VERSION%%-build%RELEASE%
+#!BuildTag: trento/trento-runner:%%OBS_VERSION%%
+#!BuildTag: trento/trento-runner:%%OBS_VERSION%%-build%RELEASE%
 FROM bci/bci-base:15.3
 
 # Define labels according to https://en.opensuse.org/Building_derived_containers
