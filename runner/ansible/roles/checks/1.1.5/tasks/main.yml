@@ -3,7 +3,7 @@
 - name: "{{ name }}.check"
   lineinfile:
     path: /etc/corosync/corosync.conf
-    regexp: '^\s*{{ key_name }}:\s*{{ expected[name] }}\s*$'
+    regexp: '^\s*{{ key_name }}\s*:\s*{{ expected[name] }}\s*$'
     state: absent
   register: result
   check_mode: true
