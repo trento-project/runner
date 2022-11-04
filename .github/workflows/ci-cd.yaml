@@ -290,7 +290,7 @@ jobs:
         run: |
           osc checkout $OBS_PROJECT $PACKAGE_NAME -o $OSC_CHECKOUT_DIR
           cp $PACKAGE_DIR/_service $OSC_CHECKOUT_DIR
-          rm -v $OSC_CHECKOUT_DIR/*.tar.gz
+          rm -v $OSC_CHECKOUT_DIR/{vendor,runner}*.tar.gz
           pushd $OSC_CHECKOUT_DIR
           osc service manualrun
           cp /__w/runner/runner/vendor.tar.gz .
