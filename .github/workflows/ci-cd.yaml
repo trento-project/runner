@@ -1,4 +1,4 @@
-name: Continuous Integration
+name: Continuous Integration and Release
 concurrency: ci-${{ github.ref }}
 on:
   push:
@@ -238,16 +238,16 @@ jobs:
     if: github.event_name == 'release' || (github.event_name == 'push' && github.ref_name == 'main') || github.event_name == 'workflow_dispatch'
     needs: [test-binary, test-checks, test-python-callback]
     container:
-      image: ghcr.io/trento-project/continuous-delivery:master
+      image: ghcr.io/trento-project/continuous-delivery:main
       env:
-        GITHUB_OAUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        DEST_FOLDER: "/tmp/osc_project"
+        OSC_CHECKOUT_DIR: /tmp/trento-runner-package
         PACKAGE_NAME: trento-runner-image
         OBS_USER: ${{ secrets.OBS_USER }}
         OBS_PASS: ${{ secrets.OBS_PASS }}
         OBS_PROJECT: ${{ secrets.OBS_PROJECT }}
-        FOLDER: packaging/suse
+        PACKAGE_DIR: packaging/suse
         REPOSITORY: ${{ github.repository }}
+      options: -u 0:0
     steps:
       - name: Cancel Previous Runs
         uses: styfle/cancel-workflow-action@0.9.1
@@ -256,20 +256,44 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v3
-
-      - uses: actions-ecosystem/action-get-latest-tag@v1
-        id: latest-tag
         with:
-          semver_only: true
-          initial_version: 0.0.1
+          fetch-depth: 0
 
       - name: Configure OSC
         # OSC credentials must be configured beforehand as the HOME variables cannot be changed from /github/home
         # that is used to run osc commands
         run: |
-          /scripts/init_osc_creds.sh
           mkdir -p $HOME/.config/osc
-          cp /root/.config/osc/oscrc $HOME/.config/osc
+          cp /home/osc/.config/osc/oscrc $HOME/.config/osc
+          /scripts/init_osc_creds.sh
+
+      - name: Set version
+        run: |
+          git config --global --add safe.directory /__w/runner/runner
+          VERSION=$(./hack/get_version_from_git.sh)
+          sed -i 's~%%REVISION%%~${{ github.sha }}~' $PACKAGE_DIR/_service && \
+          sed -i 's~%%REPOSITORY%%~${{ github.repository }}~' $PACKAGE_DIR/_service && \
+          sed -i 's~%%VERSION%%~'"${VERSION}"'~' $PACKAGE_DIR/_service && \
+          sed -i 's~%%VERSION%%~'"${VERSION}"'~' $PACKAGE_DIR/Dockerfile
+          # "+" character is not allowed in OBS dockerfile version strings
+          VERSION=${VERSION//[+]/-}
+          sed -i 's~%%OBS_VERSION%%~'"${VERSION}"'~' $PACKAGE_DIR/Dockerfile
+
+      - name: create vendor dependencies archive
+        # note the following tar options to strip all the things that could make the archive different without the content actually changing
+        # to make it easier to identify when dependencies changed
+        run: |
+          go mod vendor
+          tar --sort=name --owner=root:0 --group=root:0 --mtime='UTC 1970-01-01' -c vendor | gzip -n > vendor.tar.gz
+
+      - name: checkout and prepare OBS package
+        run: |
+          osc checkout $OBS_PROJECT $PACKAGE_NAME -o $OSC_CHECKOUT_DIR
+          cp $PACKAGE_DIR/_service $OSC_CHECKOUT_DIR
+          rm -v $OSC_CHECKOUT_DIR/{vendor,runner}*.tar.gz
+          pushd $OSC_CHECKOUT_DIR
+          osc service manualrun
+          cp /__w/runner/runner/vendor.tar.gz .
 
       - name: Prepare .changes file
         # The .changes file is updated only in release creation. This current task should be improved
@@ -277,30 +301,11 @@ jobs:
         if: github.event_name == 'release'
         run: |
           CHANGES_FILE=$PACKAGE_NAME.changes
-          osc checkout $OBS_PROJECT $PACKAGE_NAME $CHANGES_FILE
-          mv $CHANGES_FILE $FOLDER
-          VERSION=${{ steps.latest-tag.outputs.tag }}
-          hack/gh_release_to_obs_changeset.py $REPOSITORY -a shap-staff@suse.de -t $VERSION -f $FOLDER/$CHANGES_FILE
-
-      - name: Set version
-        run: |
-          git config --global --add safe.directory /__w/runner/runner
           VERSION=$(./hack/get_version_from_git.sh)
-          sed -i 's~%%REVISION%%~${{ github.sha }}~' $FOLDER/_service && \
-          sed -i 's~%%REPOSITORY%%~${{ github.repository }}~' $FOLDER/_service && \
-          sed -i 's~%%VERSION%%~'"${VERSION}"'~' $FOLDER/_service && \
-          sed -i 's~%%VERSION%%~'"${VERSION}"'~' $FOLDER/Dockerfile
-          # "+" character is not allowed in OBS dockerfile version strings
-          VERSION=${VERSION//[+]/-}
-          sed -i 's~%%OBS_VERSION%%~'"${VERSION}"'~' $FOLDER/Dockerfile
+          hack/gh_release_to_obs_changeset.py $REPOSITORY -a trento-developers@suse.com -t $VERSION -f $OSC_CHECKOUT_DIR/$CHANGES_FILE
 
       - name: Commit on OBS
         run: |
-          OBS_PACKAGE=$OBS_PROJECT/$PACKAGE_NAME
-          osc checkout $OBS_PACKAGE -o $DEST_FOLDER
-          cp -r packaging/suse/* $DEST_FOLDER
-          cd $DEST_FOLDER
-          osc rm -f ./runner*.tar.*
-          osc service dr
+          pushd $OSC_CHECKOUT_DIR
           osc ar
-          osc commit -m "New development version of $PACKAGE_NAME released"
+          osc commit -m "GitHub Actions automated update to reference ${{ github.sha }}"
