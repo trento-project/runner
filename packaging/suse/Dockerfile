@@ -1,3 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
 #!BuildTag: trento/trento-runner:latest
 #!BuildTag: trento/trento-runner:%%OBS_VERSION%%
 #!BuildTag: trento/trento-runner:%%OBS_VERSION%%-build%RELEASE%
