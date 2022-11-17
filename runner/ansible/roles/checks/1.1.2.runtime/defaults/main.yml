@@ -10,7 +10,7 @@ remediation: |
   The runtime value of the Corosync `consensus` timeout is not set as recommended.
 
   ## Remediation
-  Adjust the corosync `consensus` timeout as recommended by the Azure best practices, and reload the corosync service.
+  Adjust the corosync `consensus` timeout as recommended on the best practices, and reload the corosync service.
 
   ## References
   Azure:
