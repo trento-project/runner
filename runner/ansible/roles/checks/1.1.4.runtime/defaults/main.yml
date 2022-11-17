@@ -10,7 +10,7 @@ remediation: |
   The runtime value of the Corosync `join` parameter is not set as recommended.
 
   ## Remediation
-  Adjust the corosync `join` parameter as recommended by the Azure best practices, and reload the corosync service.
+  Adjust the corosync `join` parameter as recommended on the best practices, and reload the corosync service.
 
   ## References
   AZURE:
