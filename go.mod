@@ -12,6 +12,6 @@ require (
 	github.com/spf13/viper v1.12.0
 	github.com/stretchr/testify v1.7.2
 	github.com/swaggo/swag v1.8.3
-	github.com/vektra/mockery/v2 v2.12.3
-	golang.org/x/sync v0.0.0-20220513210516-0976fa681c29
+	github.com/vektra/mockery/v2 v2.20.0
+	golang.org/x/sync v0.1.0
 )
